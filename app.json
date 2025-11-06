@@ -1,0 +1,62 @@
+{
+  "expo": {
+    "name": "Expense Monitor",
+    "slug": "expense-monitor",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
+    "adaptiveIcon": {
+      "foregroundImage": "./assets/adaptive-icon.png",
+      "backgroundColor": "#ffffff"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "meta": {
+        "name": "Expense Monitor",
+        "description": "Track your income and expenses effortlessly",
+        "themeColor": "#6C63FF"
+      }
+    },
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#2196F3"
+    },
+    "ios": {
+      "bundleIdentifier": "com.expensemonitor.app",
+      "buildNumber": "1.0.0",
+      "supportsTablet": true,
+      "infoPlist": {
+        "CFBundleDisplayName": "Expense Monitor",
+        "NSFaceIDUsageDescription": "Allow Expense Monitor to use Face ID for secure and quick authentication.",
+        "NSPhotoLibraryUsageDescription": "Allow Expense Monitor to access your photo library to set your profile picture."
+      }
+    },
+    "android": {
+      "package": "com.expensemonitor.app",
+      "versionCode": 1,
+      "permissions": [
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "notification": {
+        "icon": "./assets/notification-icon.png",
+        "color": "#6C63FF"
+      }
+    },
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "ba58eb76-1d21-434a-9f32-fc8486bf7fca"
+      }
+    }
+  }
+}
