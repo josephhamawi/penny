@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Expense Monitor",
-    "slug": "expense-monitor",
+    "name": "Spensely",
+    "slug": "spensely",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -13,8 +13,8 @@
     "web": {
       "favicon": "./assets/favicon.png",
       "meta": {
-        "name": "Expense Monitor",
-        "description": "Track your income and expenses effortlessly",
+        "name": "Spensely",
+        "description": "Track your income and expenses effortlessly with AI-powered insights",
         "themeColor": "#6C63FF"
       }
     },
@@ -24,17 +24,17 @@
       "backgroundColor": "#2196F3"
     },
     "ios": {
-      "bundleIdentifier": "com.expensemonitor.app",
+      "bundleIdentifier": "com.spensely.app",
       "buildNumber": "1.0.0",
       "supportsTablet": true,
       "infoPlist": {
-        "CFBundleDisplayName": "Expense Monitor",
-        "NSFaceIDUsageDescription": "Allow Expense Monitor to use Face ID for secure and quick authentication.",
-        "NSPhotoLibraryUsageDescription": "Allow Expense Monitor to access your photo library to set your profile picture."
+        "CFBundleDisplayName": "Spensely",
+        "NSFaceIDUsageDescription": "Allow Spensely to use Face ID for secure and quick authentication.",
+        "NSPhotoLibraryUsageDescription": "Allow Spensely to access your photo library to set your profile picture."
       }
     },
     "android": {
-      "package": "com.expensemonitor.app",
+      "package": "com.spensely.app",
       "versionCode": 1,
       "permissions": [
         "READ_EXTERNAL_STORAGE",

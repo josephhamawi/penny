@@ -177,7 +177,7 @@ const ExpenseListScreen = ({ navigation }) => {
     <View style={styles.container}>
       <View style={styles.topBar}>
         <View>
-          <Text style={styles.topBarTitle}>Expense Monitor</Text>
+          <Text style={styles.topBarTitle}>Spensely</Text>
           <Text style={styles.topBarEmail}>
             {user?.displayName || user?.email?.split('@')[0] || 'User'}
           </Text>

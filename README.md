@@ -1,16 +1,19 @@
-# Expense Monitor 📊
+# Spensely 💎
 
-A clean, fast, and simple mobile expense tracking app built with React Native (Expo) and Firebase.
+A premium mobile expense tracking app with AI-powered insights, built with React Native (Expo) and Firebase.
 
 ## Quick Overview
 
-Track your income and expenses with:
+Track your income and expenses with premium features:
 - 📱 Cross-platform (iOS & Android)
 - 🔐 Secure authentication
 - ☁️ Cloud sync via Firebase
 - 📊 Real-time balance calculation
+- 💎 Premium subscription with RevenueCat
+- 🤖 AI-powered savings goals (GPT-3.5)
+- 📈 AI personality reports (GPT-4)
 - 📥 CSV export functionality
-- 🎯 Simple, intuitive interface
+- 🎯 Beautiful, intuitive interface
 
 ## Tech Stack
 
@@ -187,5 +190,7 @@ For issues or questions, refer to:
 - [React Navigation](https://reactnavigation.org/)
 
 ---
+
+**Spensely** - Smart expense tracking with AI-powered insights 💎
 
 Built with ❤️ using React Native & Firebase

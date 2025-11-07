@@ -107,8 +107,8 @@ const LoginScreen = ({ navigation }) => {
       style={styles.container}
     >
       <View style={styles.content}>
-        <Text style={styles.title}>Expense Monitor</Text>
-        <Text style={styles.subtitle}>Track your finances</Text>
+        <Text style={styles.title}>Spensely</Text>
+        <Text style={styles.subtitle}>Smart spending insights</Text>
 
         <TextInput
           style={styles.input}

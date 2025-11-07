@@ -1,7 +1,7 @@
 {
-  "name": "expense-monitor",
+  "name": "spensely",
   "version": "1.0.0",
-  "description": "Expense Monitor - Track your income and expenses",
+  "description": "Spensely - Track your income and expenses with AI-powered insights",
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
