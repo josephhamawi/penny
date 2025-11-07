@@ -15,6 +15,7 @@
 
 import Purchases from 'react-native-purchases';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 // Constants
 const SUBSCRIPTION_CACHE_KEY = '@expense_monitor:subscription_status';
@@ -457,14 +458,24 @@ export const getPackageByType = (offering, packageType) => {
 export const initializeRevenueCat = async (apiKey, userId = null) => {
   try {
     console.log('[SubscriptionService] Initializing RevenueCat...');
+    console.log('[SubscriptionService] Platform:', Platform.OS);
+    console.log('[SubscriptionService] API Key:', apiKey ? 'present' : 'missing');
 
     // Enable debug logs in development
     if (__DEV__) {
       Purchases.setLogLevel(Purchases.LOG_LEVEL.DEBUG);
     }
 
-    // Configure SDK
-    await Purchases.configure({ apiKey });
+    // Configure SDK with platform-specific API key
+    if (Platform.OS === 'ios') {
+      await Purchases.configure({ apiKey });
+    } else if (Platform.OS === 'android') {
+      // For Android, use the same key or a different one
+      await Purchases.configure({ apiKey });
+    } else {
+      console.warn('[SubscriptionService] Unsupported platform:', Platform.OS);
+      return false;
+    }
 
     console.log('[SubscriptionService] RevenueCat initialized successfully');
 
