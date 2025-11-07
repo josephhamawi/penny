@@ -471,38 +471,46 @@ export const initializeRevenueCat = async (apiKey, userId = null) => {
     console.log('[SubscriptionService] API Key:', apiKey ? 'present' : 'missing');
 
     if (!apiKey) {
-      console.warn('[SubscriptionService] No API key provided');
+      console.warn('[SubscriptionService] No API key provided - subscriptions disabled');
+      return false;
+    }
+
+    // RevenueCat may not work in Expo Go - check if we're in a development build
+    if (Platform.OS === 'web') {
+      console.warn('[SubscriptionService] RevenueCat not supported on web');
       return false;
     }
 
     // Enable debug logs in development
     if (__DEV__) {
-      Purchases.setLogLevel(Purchases.LOG_LEVEL.DEBUG);
+      try {
+        Purchases.setLogLevel(Purchases.LOG_LEVEL.VERBOSE);
+      } catch (e) {
+        console.warn('[SubscriptionService] Could not set log level:', e.message);
+      }
     }
 
-    // Configure SDK - pass apiKey as string, not object
-    if (Platform.OS === 'ios') {
-      await Purchases.configure({ apiKey: apiKey });
-    } else if (Platform.OS === 'android') {
-      await Purchases.configure({ apiKey: apiKey });
-    } else {
-      console.warn('[SubscriptionService] Unsupported platform:', Platform.OS);
+    // Configure SDK with proper syntax
+    try {
+      Purchases.configure({
+        apiKey: apiKey,
+        appUserID: userId || undefined,
+      });
+
+      isRevenueCatInitialized = true;
+      console.log('[SubscriptionService] RevenueCat configured successfully');
+
+      return true;
+    } catch (configError) {
+      console.error('[SubscriptionService] Configure failed:', configError.message);
+      console.warn('[SubscriptionService] Subscription features will be unavailable');
+      console.warn('[SubscriptionService] Note: RevenueCat may not work in Expo Go - use EAS Build for production');
       return false;
     }
 
-    isRevenueCatInitialized = true;
-    console.log('[SubscriptionService] RevenueCat initialized successfully');
-
-    // Log in user if provided
-    if (userId) {
-      await loginUser(userId);
-    }
-
-    return true;
-
   } catch (error) {
-    console.error('[SubscriptionService] Failed to initialize RevenueCat:', error);
-    console.error('[SubscriptionService] Error details:', error.message);
+    console.error('[SubscriptionService] Failed to initialize RevenueCat:', error.message);
+    console.warn('[SubscriptionService] App will continue without subscription features');
     return false;
   }
 };

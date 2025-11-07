@@ -159,10 +159,16 @@ const RootNavigator = () => {
       try {
         const REVENUECAT_IOS_API_KEY = process.env.REVENUECAT_IOS_API_KEY || 'test_kPJQuUnNcPqdAlnYATBQGahqFKX';
         console.log('[App] Initializing RevenueCat...');
-        await initializeRevenueCat(REVENUECAT_IOS_API_KEY);
-        console.log('[App] RevenueCat initialized successfully');
+        const success = await initializeRevenueCat(REVENUECAT_IOS_API_KEY);
+        if (success) {
+          console.log('[App] RevenueCat initialized successfully');
+        } else {
+          console.warn('[App] RevenueCat initialization failed - continuing without subscriptions');
+          console.warn('[App] Note: RevenueCat requires EAS Build or development build to work');
+        }
       } catch (error) {
-        console.error('[App] Failed to initialize RevenueCat:', error);
+        console.error('[App] RevenueCat initialization error:', error.message);
+        console.warn('[App] App will continue without subscription features');
       }
     };
 
