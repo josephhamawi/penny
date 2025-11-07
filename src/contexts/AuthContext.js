@@ -117,6 +117,16 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const resetPassword = async (email) => {
+    try {
+      await auth.sendPasswordResetEmail(email);
+      return true;
+    } catch (error) {
+      console.error('Error sending password reset email:', error);
+      throw error;
+    }
+  };
+
   const value = {
     user,
     signup,
@@ -127,7 +137,8 @@ export const AuthProvider = ({ children }) => {
     biometricAvailable,
     clearStoredCredentials,
     hasStoredCredentials,
-    updateUserProfile
+    updateUserProfile,
+    resetPassword
   };
 
   return (

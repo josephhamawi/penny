@@ -13,12 +13,17 @@ import { subscribeToExpenses } from '../services/expenseService';
 import { getCategoryConfig } from '../config/categories';
 import { getMonthlyBudget } from '../services/budgetService';
 import { formatCurrency, formatNumber } from '../utils/formatNumber';
+import { useSubscription } from '../hooks/useSubscription';
+import PremiumBadge from '../components/PremiumBadge';
+import LockedFeatureCard from '../components/LockedFeatureCard';
 
 const HomeScreen = ({ navigation }) => {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [monthlyBudget, setMonthlyBudget] = useState(5000);
+  const [showUpgradeBanner, setShowUpgradeBanner] = useState(true);
   const { user } = useAuth();
+  const { isPremium } = useSubscription();
 
   useEffect(() => {
     loadBudget();
@@ -96,9 +101,12 @@ const HomeScreen = ({ navigation }) => {
           <Text style={styles.headerSubtitle}>Total Balance</Text>
           <Text style={styles.headerAmount}>${formatCurrency(currentBalance)}</Text>
         </View>
-        <TouchableOpacity style={styles.notificationButton}>
-          <Icon name="bell" size={20} color="#FFF" />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <PremiumBadge onPress={() => navigation.navigate('SubscriptionManagement')} />
+          <TouchableOpacity style={styles.notificationButton}>
+            <Icon name="bell" size={20} color="#FFF" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Budget Card */}
@@ -129,6 +137,41 @@ const HomeScreen = ({ navigation }) => {
           <Text style={styles.statLabel}>Expenses</Text>
         </View>
       </View>
+
+      {/* Upgrade Banner for Free Users */}
+      {!isPremium && showUpgradeBanner && (
+        <View style={styles.upgradeBanner}>
+          <Icon name="star" size={20} color="#FFD700" />
+          <Text style={styles.bannerText}>
+            Unlock AI insights and savings goals!
+          </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Paywall')}>
+            <Text style={styles.upgradeButton}>Upgrade</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setShowUpgradeBanner(false)}>
+            <Icon name="times" size={20} color="#999" />
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Premium Features Section */}
+      {!isPremium && (
+        <View style={styles.premiumSection}>
+          <Text style={styles.sectionTitle}>Premium Features</Text>
+          <LockedFeatureCard
+            title="Savings Goals"
+            description="Set goals and get AI-powered recommendations to achieve them faster"
+            icon="bullseye"
+            onPress={() => navigation.navigate('Paywall')}
+          />
+          <LockedFeatureCard
+            title="Expense Personality"
+            description="Get monthly insights about your spending habits and personality"
+            icon="chart-line"
+            onPress={() => navigation.navigate('Paywall')}
+          />
+        </View>
+      )}
 
       {/* Recent Records */}
       <View style={styles.recentSection}>
@@ -224,6 +267,11 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: 'bold',
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
   notificationButton: {
     width: 40,
     height: 40,
@@ -231,6 +279,38 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  upgradeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    marginHorizontal: 20,
+    marginBottom: 20,
+    padding: 15,
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FFD700',
+  },
+  bannerText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#333',
+    marginLeft: 10,
+  },
+  upgradeButton: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6C63FF',
+    marginRight: 10,
+  },
+  premiumSection: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
   },
   budgetCard: {
     margin: 20,

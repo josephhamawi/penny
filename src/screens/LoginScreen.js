@@ -18,7 +18,7 @@ const LoginScreen = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [showBiometric, setShowBiometric] = useState(false);
-  const { login, biometricLogin, biometricAvailable, hasStoredCredentials } = useAuth();
+  const { login, biometricLogin, biometricAvailable, hasStoredCredentials, resetPassword } = useAuth();
 
   useEffect(() => {
     checkBiometricOption();
@@ -64,6 +64,41 @@ const LoginScreen = ({ navigation }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email) {
+      Alert.alert('Error', 'Please enter your email address');
+      return;
+    }
+
+    Alert.alert(
+      'Reset Password',
+      `Send password reset email to ${email}?`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel'
+        },
+        {
+          text: 'Send',
+          onPress: async () => {
+            try {
+              await resetPassword(email);
+              Alert.alert('Success', 'Password reset email sent! Check your inbox.');
+            } catch (error) {
+              let errorMessage = 'Failed to send reset email';
+              if (error.code === 'auth/user-not-found') {
+                errorMessage = 'No user found with this email';
+              } else if (error.code === 'auth/invalid-email') {
+                errorMessage = 'Invalid email address';
+              }
+              Alert.alert('Error', errorMessage);
+            }
+          }
+        }
+      ]
+    );
   };
 
   return (
@@ -118,6 +153,16 @@ const LoginScreen = ({ navigation }) => {
             </Text>
           </TouchableOpacity>
         )}
+
+        <TouchableOpacity
+          onPress={handleForgotPassword}
+          disabled={loading}
+          style={styles.forgotPasswordButton}
+        >
+          <Text style={styles.forgotPasswordText}>
+            Forgot Password?
+          </Text>
+        </TouchableOpacity>
 
         <TouchableOpacity
           onPress={() => navigation.navigate('Register')}
@@ -201,6 +246,15 @@ const styles = StyleSheet.create({
     color: '#2196F3',
     textAlign: 'center',
     fontSize: 14,
+  },
+  forgotPasswordButton: {
+    marginBottom: 20,
+  },
+  forgotPasswordText: {
+    color: '#666',
+    textAlign: 'center',
+    fontSize: 14,
+    textDecorationLine: 'underline',
   },
 });
 

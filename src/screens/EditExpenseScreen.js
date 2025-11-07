@@ -81,7 +81,7 @@ const EditExpenseScreen = ({ navigation, route }) => {
         category,
         inAmount: inValue,
         outAmount: outValue
-      }, user.uid);
+      });
 
       Toast.show({
         type: 'success',
@@ -120,7 +120,7 @@ const EditExpenseScreen = ({ navigation, route }) => {
           onPress: async () => {
             setLoading(true);
             try {
-              await deleteExpense(expense.id, user.uid);
+              await deleteExpense(expense.id);
               Toast.show({
                 type: 'success',
                 text1: 'Success',

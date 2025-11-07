@@ -1,16 +1,26 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { db, auth } from '../config/firebase';
 
-const WEBHOOK_URL_KEY = 'googleSheetsWebhookUrl';
+// Helper to get user's webhook document
+const getUserWebhookDoc = (userId) => {
+  if (!userId) throw new Error('User ID is required');
+  return db.doc(`users/${userId}/settings/webhookUrl`);
+};
 
 /**
  * Store the Google Sheets webhook URL
  */
 export const saveWebhookUrl = async (url) => {
   try {
-    await AsyncStorage.setItem(WEBHOOK_URL_KEY, url);
+    const user = auth.currentUser;
+    if (!user) throw new Error('User not authenticated');
+
+    await getUserWebhookDoc(user.uid).set({
+      url: url,
+      updatedAt: new Date()
+    });
     return true;
   } catch (error) {
-    // Silent fail - storage error shouldn't break the app
+    console.error('Error saving webhook URL:', error);
     throw error;
   }
 };
@@ -18,12 +28,18 @@ export const saveWebhookUrl = async (url) => {
 /**
  * Get the stored Google Sheets webhook URL
  */
-export const getWebhookUrl = async () => {
+export const getWebhookUrl = async (userId = null) => {
   try {
-    const url = await AsyncStorage.getItem(WEBHOOK_URL_KEY);
-    return url;
+    const targetUserId = userId || auth.currentUser?.uid;
+    if (!targetUserId) return null;
+
+    const doc = await getUserWebhookDoc(targetUserId).get();
+    if (doc.exists) {
+      return doc.data().url || null;
+    }
+    return null;
   } catch (error) {
-    // Silent fail - return null if unable to get URL
+    console.error('Error getting webhook URL:', error);
     return null;
   }
 };
@@ -33,10 +49,13 @@ export const getWebhookUrl = async () => {
  */
 export const clearWebhookUrl = async () => {
   try {
-    await AsyncStorage.removeItem(WEBHOOK_URL_KEY);
+    const user = auth.currentUser;
+    if (!user) throw new Error('User not authenticated');
+
+    await getUserWebhookDoc(user.uid).delete();
     return true;
   } catch (error) {
-    // Silent fail - storage error shouldn't break the app
+    console.error('Error clearing webhook URL:', error);
     throw error;
   }
 };

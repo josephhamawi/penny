@@ -20,6 +20,7 @@ if (!firebase.apps.length) {
 
 // Export auth and firestore
 export const auth = firebase.auth();
-export const db = firebase.firestore();
+export const firestore = firebase.firestore();
+export const db = firebase.firestore(); // Alias for backward compatibility
 
 export default firebase;

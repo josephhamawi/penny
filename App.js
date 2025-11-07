@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { FontAwesome5 as Icon } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
+import { initializeRevenueCat, loginUser } from './src/services/subscriptionService';
 
 // Screens
 import LoginScreen from './src/screens/LoginScreen';
@@ -17,6 +18,13 @@ import StatisticsScreen from './src/screens/StatisticsScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import AddExpenseScreen from './src/screens/AddExpenseScreen';
 import EditExpenseScreen from './src/screens/EditExpenseScreen';
+import PaywallScreen from './src/screens/PaywallScreen';
+import SubscriptionManagementScreen from './src/screens/SubscriptionManagementScreen';
+import PersonalityReportScreen from './src/screens/PersonalityReportScreen';
+import ReportHistoryScreen from './src/screens/ReportHistoryScreen';
+import GoalsDashboardScreen from './src/screens/GoalsDashboardScreen';
+import CreateGoalScreen from './src/screens/CreateGoalScreen';
+import GoalDetailScreen from './src/screens/GoalDetailScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -89,11 +97,98 @@ const MainStack = () => (
         animation: 'slide_from_bottom'
       }}
     />
+    <Stack.Screen
+      name="Paywall"
+      component={PaywallScreen}
+      options={{
+        presentation: 'modal',
+        headerShown: false
+      }}
+    />
+    <Stack.Screen
+      name="SubscriptionManagement"
+      component={SubscriptionManagementScreen}
+      options={{
+        headerShown: false
+      }}
+    />
+    <Stack.Screen
+      name="PersonalityReport"
+      component={PersonalityReportScreen}
+      options={{
+        headerShown: false
+      }}
+    />
+    <Stack.Screen
+      name="ReportHistory"
+      component={ReportHistoryScreen}
+      options={{
+        headerShown: false
+      }}
+    />
+    <Stack.Screen
+      name="GoalsDashboard"
+      component={GoalsDashboardScreen}
+      options={{
+        headerShown: false
+      }}
+    />
+    <Stack.Screen
+      name="CreateGoal"
+      component={CreateGoalScreen}
+      options={{
+        headerShown: false
+      }}
+    />
+    <Stack.Screen
+      name="GoalDetail"
+      component={GoalDetailScreen}
+      options={{
+        headerShown: false
+      }}
+    />
   </Stack.Navigator>
 );
 
 const RootNavigator = () => {
   const { user, loading } = useAuth();
+
+  // Initialize RevenueCat on app launch
+  useEffect(() => {
+    const initRevenueCat = async () => {
+      try {
+        // TODO: Replace with actual API key from .env or app.config.js
+        // For now, we'll just log that initialization is needed
+        console.log('[App] RevenueCat initialization needed');
+        console.log('[App] Please add REVENUECAT_IOS_API_KEY to .env file');
+
+        // Uncomment when API key is available:
+        // const REVENUECAT_IOS_API_KEY = 'your_api_key_here';
+        // await initializeRevenueCat(REVENUECAT_IOS_API_KEY);
+      } catch (error) {
+        console.error('[App] Failed to initialize RevenueCat:', error);
+      }
+    };
+
+    initRevenueCat();
+  }, []);
+
+  // Log in user to RevenueCat when authenticated
+  useEffect(() => {
+    const loginToRevenueCat = async () => {
+      if (user && user.uid) {
+        try {
+          console.log('[App] Logging user into RevenueCat:', user.uid);
+          // Uncomment when RevenueCat is initialized:
+          // await loginUser(user.uid);
+        } catch (error) {
+          console.error('[App] RevenueCat login error:', error);
+        }
+      }
+    };
+
+    loginToRevenueCat();
+  }, [user]);
 
   if (loading) {
     return (

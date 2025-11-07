@@ -74,7 +74,7 @@ const AddExpenseScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
-      await addExpense(user.uid, {
+      await addExpense({
         date,
         description: description.trim(),
         category,

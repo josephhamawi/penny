@@ -1,14 +1,21 @@
 import firebase from 'firebase/compat/app';
-import { db } from '../config/firebase';
+import { db, auth } from '../config/firebase';
 import { syncExpenseToSheets, batchSyncToSheets } from './googleSheetsSyncService';
 
-const COLLECTION_NAME = 'expenses';
+// Helper to get user's expenses collection
+const getUserExpensesCollection = (userId) => {
+  if (!userId) throw new Error('User ID is required');
+  return db.collection(`users/${userId}/expenses`);
+};
 
 // Add a new expense record
-export const addExpense = async (userId, expenseData) => {
+export const addExpense = async (expenseData) => {
   try {
-    const docRef = await db.collection(COLLECTION_NAME).add({
-      userId,
+    const user = auth.currentUser;
+    if (!user) throw new Error('User not authenticated');
+
+    const docRef = await getUserExpensesCollection(user.uid).add({
+      userId: user.uid,
       date: firebase.firestore.Timestamp.fromDate(new Date(expenseData.date)),
       description: expenseData.description,
       category: expenseData.category,
@@ -18,7 +25,7 @@ export const addExpense = async (userId, expenseData) => {
     });
 
     // Sync all expenses to Google Sheets after adding
-    await syncAllExpensesToSheets(userId);
+    await syncAllExpensesToSheets(user.uid);
 
     return docRef.id;
   } catch (error) {
@@ -29,8 +36,11 @@ export const addExpense = async (userId, expenseData) => {
 
 // Subscribe to real-time expense updates
 export const subscribeToExpenses = (userId, callback) => {
-  return db.collection(COLLECTION_NAME)
-    .where('userId', '==', userId)
+  if (!userId) throw new Error('User ID is required');
+
+  return getUserExpensesCollection(userId)
+    .orderBy('date', 'asc')
+    .orderBy('createdAt', 'asc')
     .onSnapshot((querySnapshot) => {
       const expenses = [];
       let balance = 0;
@@ -73,20 +83,22 @@ export const subscribeToExpenses = (userId, callback) => {
 };
 
 // Update an existing expense
-export const updateExpense = async (expenseId, expenseData, userId) => {
+export const updateExpense = async (expenseId, expenseData) => {
   try {
-    await db.collection(COLLECTION_NAME).doc(expenseId).update({
+    const user = auth.currentUser;
+    if (!user) throw new Error('User not authenticated');
+
+    await getUserExpensesCollection(user.uid).doc(expenseId).update({
       date: firebase.firestore.Timestamp.fromDate(new Date(expenseData.date)),
       description: expenseData.description,
       category: expenseData.category,
       inAmount: parseFloat(expenseData.inAmount) || 0,
-      outAmount: parseFloat(expenseData.outAmount) || 0
+      outAmount: parseFloat(expenseData.outAmount) || 0,
+      updatedAt: firebase.firestore.Timestamp.now()
     });
 
     // Sync all expenses to Google Sheets after updating
-    if (userId) {
-      await syncAllExpensesToSheets(userId);
-    }
+    await syncAllExpensesToSheets(user.uid);
   } catch (error) {
     console.error('Error updating expense:', error);
     throw error;
@@ -94,14 +106,15 @@ export const updateExpense = async (expenseId, expenseData, userId) => {
 };
 
 // Delete an expense
-export const deleteExpense = async (expenseId, userId) => {
+export const deleteExpense = async (expenseId) => {
   try {
-    await db.collection(COLLECTION_NAME).doc(expenseId).delete();
+    const user = auth.currentUser;
+    if (!user) throw new Error('User not authenticated');
+
+    await getUserExpensesCollection(user.uid).doc(expenseId).delete();
 
     // Sync all expenses to Google Sheets after deleting
-    if (userId) {
-      await syncAllExpensesToSheets(userId);
-    }
+    await syncAllExpensesToSheets(user.uid);
   } catch (error) {
     console.error('Error deleting expense:', error);
     throw error;
@@ -111,8 +124,11 @@ export const deleteExpense = async (expenseId, userId) => {
 // Get all expenses for export
 export const getAllExpenses = async (userId) => {
   try {
-    const querySnapshot = await db.collection(COLLECTION_NAME)
-      .where('userId', '==', userId)
+    if (!userId) throw new Error('User ID is required');
+
+    const querySnapshot = await getUserExpensesCollection(userId)
+      .orderBy('date', 'asc')
+      .orderBy('createdAt', 'asc')
       .get();
 
     const expenses = [];
