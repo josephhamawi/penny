@@ -157,14 +157,10 @@ const RootNavigator = () => {
   useEffect(() => {
     const initRevenueCat = async () => {
       try {
-        // TODO: Replace with actual API key from .env or app.config.js
-        // For now, we'll just log that initialization is needed
-        console.log('[App] RevenueCat initialization needed');
-        console.log('[App] Please add REVENUECAT_IOS_API_KEY to .env file');
-
-        // Uncomment when API key is available:
-        // const REVENUECAT_IOS_API_KEY = 'your_api_key_here';
-        // await initializeRevenueCat(REVENUECAT_IOS_API_KEY);
+        const REVENUECAT_IOS_API_KEY = process.env.REVENUECAT_IOS_API_KEY || 'test_kPJQuUnNcPqdAlnYATBQGahqFKX';
+        console.log('[App] Initializing RevenueCat...');
+        await initializeRevenueCat(REVENUECAT_IOS_API_KEY);
+        console.log('[App] RevenueCat initialized successfully');
       } catch (error) {
         console.error('[App] Failed to initialize RevenueCat:', error);
       }
@@ -179,8 +175,8 @@ const RootNavigator = () => {
       if (user && user.uid) {
         try {
           console.log('[App] Logging user into RevenueCat:', user.uid);
-          // Uncomment when RevenueCat is initialized:
-          // await loginUser(user.uid);
+          await loginUser(user.uid);
+          console.log('[App] User logged into RevenueCat successfully');
         } catch (error) {
           console.error('[App] RevenueCat login error:', error);
         }
