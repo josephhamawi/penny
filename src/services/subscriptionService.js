@@ -455,28 +455,42 @@ export const getPackageByType = (offering, packageType) => {
  * @param {string} apiKey - RevenueCat iOS API key
  * @param {string|null} userId - User ID to identify user (Firebase UID)
  */
+// Track if RevenueCat is already initialized to prevent double initialization
+let isRevenueCatInitialized = false;
+
 export const initializeRevenueCat = async (apiKey, userId = null) => {
   try {
+    // Prevent double initialization
+    if (isRevenueCatInitialized) {
+      console.log('[SubscriptionService] RevenueCat already initialized, skipping');
+      return true;
+    }
+
     console.log('[SubscriptionService] Initializing RevenueCat...');
     console.log('[SubscriptionService] Platform:', Platform.OS);
     console.log('[SubscriptionService] API Key:', apiKey ? 'present' : 'missing');
+
+    if (!apiKey) {
+      console.warn('[SubscriptionService] No API key provided');
+      return false;
+    }
 
     // Enable debug logs in development
     if (__DEV__) {
       Purchases.setLogLevel(Purchases.LOG_LEVEL.DEBUG);
     }
 
-    // Configure SDK with platform-specific API key
+    // Configure SDK - pass apiKey as string, not object
     if (Platform.OS === 'ios') {
-      await Purchases.configure({ apiKey });
+      await Purchases.configure({ apiKey: apiKey });
     } else if (Platform.OS === 'android') {
-      // For Android, use the same key or a different one
-      await Purchases.configure({ apiKey });
+      await Purchases.configure({ apiKey: apiKey });
     } else {
       console.warn('[SubscriptionService] Unsupported platform:', Platform.OS);
       return false;
     }
 
+    isRevenueCatInitialized = true;
     console.log('[SubscriptionService] RevenueCat initialized successfully');
 
     // Log in user if provided
@@ -488,6 +502,7 @@ export const initializeRevenueCat = async (apiKey, userId = null) => {
 
   } catch (error) {
     console.error('[SubscriptionService] Failed to initialize RevenueCat:', error);
+    console.error('[SubscriptionService] Error details:', error.message);
     return false;
   }
 };
