@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
 import { auth } from '../config/firebase';
+import { clearWebhookCache } from '../services/googleSheetsSyncService';
 
 const AuthContext = createContext({});
 
@@ -78,6 +79,9 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
+    // Clear webhook cache to prevent data leakage between users
+    await clearWebhookCache();
+
     // Don't clear credentials on logout for biometric login
     return auth.signOut();
   };
