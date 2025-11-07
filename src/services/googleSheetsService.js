@@ -100,27 +100,68 @@ const rowToExpense = (row) => {
   inAmount = inAmount ? parseFloat(inAmount.toString().replace(/[$,]/g, '')) : 0;
   outAmount = outAmount ? parseFloat(outAmount.toString().replace(/[$,]/g, '')) : 0;
 
-  // Parse date - support various formats
+  // Parse date - support various formats with robust error handling
   let parsedDate;
-  if (date.includes('/')) {
-    const parts = date.split('/');
-    // Assume mm/dd/YYYY format (common in Google Sheets)
-    if (parts.length === 3) {
-      const month = parts[0];
-      const day = parts[1];
-      let year = parts[2];
-      // Handle 2-digit year
-      if (year.length === 2) {
-        year = '20' + year;
-      }
-      // Create date in YYYY-MM-DD format
-      parsedDate = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
-    }
-  } else if (date.includes('-')) {
-    parsedDate = new Date(date);
-  }
 
-  if (!parsedDate || isNaN(parsedDate.getTime())) {
+  try {
+    if (!date || date.trim() === '') {
+      // No date provided, use current date
+      parsedDate = new Date();
+    } else if (date.includes('/')) {
+      const parts = date.split('/');
+      // Assume mm/dd/YYYY format (common in Google Sheets)
+      if (parts.length === 3) {
+        let month = parseInt(parts[0], 10);
+        let day = parseInt(parts[1], 10);
+        let year = parseInt(parts[2], 10);
+
+        // Handle 2-digit year
+        if (year < 100) {
+          year = year < 50 ? 2000 + year : 1900 + year;
+        }
+
+        // Validate ranges
+        if (month < 1 || month > 12) {
+          throw new Error(`Invalid month: ${month}`);
+        }
+        if (day < 1 || day > 31) {
+          throw new Error(`Invalid day: ${day}`);
+        }
+        if (year < 1900 || year > 2100) {
+          throw new Error(`Invalid year: ${year}`);
+        }
+
+        // Create date in YYYY-MM-DD format
+        parsedDate = new Date(year, month - 1, day);
+
+        // Verify date was created correctly (handles invalid dates like Feb 31)
+        if (parsedDate.getFullYear() !== year ||
+            parsedDate.getMonth() !== month - 1 ||
+            parsedDate.getDate() !== day) {
+          throw new Error('Invalid date combination');
+        }
+      } else {
+        throw new Error('Invalid date format');
+      }
+    } else if (date.includes('-')) {
+      parsedDate = new Date(date);
+      if (isNaN(parsedDate.getTime())) {
+        throw new Error('Invalid date string');
+      }
+    } else {
+      // Try parsing as-is
+      parsedDate = new Date(date);
+      if (isNaN(parsedDate.getTime())) {
+        throw new Error('Unparseable date format');
+      }
+    }
+
+    // Final validation
+    if (!parsedDate || isNaN(parsedDate.getTime())) {
+      throw new Error('Date parse resulted in invalid date');
+    }
+  } catch (error) {
+    console.warn(`Date parsing failed for "${date}":`, error.message, '- using current date');
     parsedDate = new Date();
   }
 
@@ -164,6 +205,7 @@ export const importFromGoogleSheets = async (url, userId) => {
 
     // Import each row as an expense
     let importedCount = 0;
+    let skippedCount = 0;
     for (const row of rows) {
       try {
         const expenseData = rowToExpense(row);
@@ -172,12 +214,19 @@ export const importFromGoogleSheets = async (url, userId) => {
         if (expenseData.inAmount > 0 || expenseData.outAmount > 0) {
           await addExpense(userId, expenseData);
           importedCount++;
+        } else {
+          skippedCount++;
+          console.log('Skipped row with no amounts:', row);
         }
       } catch (error) {
-        console.error('Error importing row:', error);
+        console.error('Error importing row:', error.message);
+        console.error('Row data:', JSON.stringify(row));
+        skippedCount++;
         // Continue with next row
       }
     }
+
+    console.log(`Import complete: ${importedCount} imported, ${skippedCount} skipped`)
 
     return importedCount;
   } catch (error) {
