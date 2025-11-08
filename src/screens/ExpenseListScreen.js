@@ -8,13 +8,14 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
-  Image
+  Image,
+  Modal
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 as Icon } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { useAuth } from '../contexts/AuthContext';
-import { subscribeToExpenses } from '../services/expenseService';
+import { subscribeToExpenses, deleteExpense } from '../services/expenseService';
 import { exportToExcel } from '../utils/csvExport';
 import { importFromGoogleSheets } from '../services/googleSheetsService';
 import { colors, shadows, typography } from '../theme/colors';
@@ -25,6 +26,12 @@ const ExpenseListScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
+  const [showProgressModal, setShowProgressModal] = useState(false);
+  const importAbortController = React.useRef(null);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedExpenses, setSelectedExpenses] = useState(new Set());
+  const [deleting, setDeleting] = useState(false);
   const { user, logout } = useAuth();
 
   useEffect(() => {
@@ -65,6 +72,22 @@ const ExpenseListScreen = ({ navigation }) => {
     }
   };
 
+  const handleCancelImport = () => {
+    if (importAbortController.current) {
+      importAbortController.current.abort();
+      importAbortController.current = null;
+      setImporting(false);
+      setShowProgressModal(false);
+      Toast.show({
+        type: 'info',
+        text1: 'Import Cancelled',
+        text2: 'Import has been stopped',
+        position: 'bottom',
+        visibilityTime: 3000,
+      });
+    }
+  };
+
   const handleImport = () => {
     Alert.prompt(
       'Import from Google Sheets',
@@ -89,8 +112,21 @@ const ExpenseListScreen = ({ navigation }) => {
             }
 
             setImporting(true);
+            setShowProgressModal(true);
+            setImportProgress({ current: 0, total: 0 });
+            importAbortController.current = new AbortController();
+
             try {
-              const count = await importFromGoogleSheets(url.trim(), user.uid);
+              const count = await importFromGoogleSheets(
+                url.trim(),
+                user.uid,
+                (current, total) => {
+                  setImportProgress({ current, total });
+                },
+                importAbortController.current.signal
+              );
+
+              setShowProgressModal(false);
               Toast.show({
                 type: 'success',
                 text1: 'Import Successful',
@@ -99,6 +135,11 @@ const ExpenseListScreen = ({ navigation }) => {
                 visibilityTime: 4000,
               });
             } catch (error) {
+              setShowProgressModal(false);
+              if (error.name === 'AbortError') {
+                // User cancelled - already shown toast in handleCancelImport
+                return;
+              }
               Toast.show({
                 type: 'error',
                 text1: 'Import Failed',
@@ -108,6 +149,7 @@ const ExpenseListScreen = ({ navigation }) => {
               });
             } finally {
               setImporting(false);
+              importAbortController.current = null;
             }
           }
         }
@@ -118,6 +160,74 @@ const ExpenseListScreen = ({ navigation }) => {
 
   const onRefresh = () => {
     setRefreshing(true);
+  };
+
+  const toggleSelectionMode = () => {
+    setSelectionMode(!selectionMode);
+    setSelectedExpenses(new Set());
+  };
+
+  const toggleExpenseSelection = (expenseId) => {
+    const newSelected = new Set(selectedExpenses);
+    if (newSelected.has(expenseId)) {
+      newSelected.delete(expenseId);
+    } else {
+      newSelected.add(expenseId);
+    }
+    setSelectedExpenses(newSelected);
+  };
+
+  const selectAll = () => {
+    if (selectedExpenses.size === expenses.length) {
+      setSelectedExpenses(new Set());
+    } else {
+      setSelectedExpenses(new Set(expenses.map(e => e.id)));
+    }
+  };
+
+  const handleDeleteSelected = async () => {
+    if (selectedExpenses.size === 0) return;
+
+    Alert.alert(
+      'Delete Expenses',
+      `Are you sure you want to delete ${selectedExpenses.size} expense${selectedExpenses.size > 1 ? 's' : ''}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            setDeleting(true);
+            try {
+              let deletedCount = 0;
+              for (const expenseId of selectedExpenses) {
+                await deleteExpense(expenseId);
+                deletedCount++;
+              }
+              Toast.show({
+                type: 'success',
+                text1: 'Deleted Successfully',
+                text2: `${deletedCount} expense${deletedCount > 1 ? 's' : ''} deleted`,
+                position: 'bottom',
+                visibilityTime: 3000,
+              });
+              setSelectedExpenses(new Set());
+              setSelectionMode(false);
+            } catch (error) {
+              Toast.show({
+                type: 'error',
+                text1: 'Delete Failed',
+                text2: error.message || 'Failed to delete expenses',
+                position: 'bottom',
+                visibilityTime: 3000,
+              });
+            } finally {
+              setDeleting(false);
+            }
+          }
+        }
+      ]
+    );
   };
 
   const renderHeader = () => (
@@ -132,35 +242,61 @@ const ExpenseListScreen = ({ navigation }) => {
     </View>
   );
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={styles.row}
-      onPress={() => navigation.navigate('EditExpense', { expense: item })}
-      activeOpacity={0.7}
-    >
-      <Text style={[styles.cell, styles.refCell]} numberOfLines={1}>
-        {item.ref}
-      </Text>
-      <Text style={[styles.cell, styles.dateCell]} numberOfLines={1}>
-        {item.date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })}
-      </Text>
-      <Text style={[styles.cell, styles.descCell]} numberOfLines={2}>
-        {item.description}
-      </Text>
-      <Text style={[styles.cell, styles.categoryCell]} numberOfLines={1}>
-        {item.category}
-      </Text>
-      <Text style={[styles.cell, styles.amountCell, item.inAmount > 0 && styles.inAmount]}>
-        {item.inAmount > 0 ? `$${item.inAmount.toFixed(2)}` : '-'}
-      </Text>
-      <Text style={[styles.cell, styles.amountCell, item.outAmount > 0 && styles.outAmount]}>
-        {item.outAmount > 0 ? `$${item.outAmount.toFixed(2)}` : '-'}
-      </Text>
-      <Text style={[styles.cell, styles.amountCell, styles.balanceAmount]}>
-        ${item.balance.toFixed(2)}
-      </Text>
-    </TouchableOpacity>
-  );
+  const renderItem = ({ item }) => {
+    const isSelected = selectedExpenses.has(item.id);
+
+    return (
+      <TouchableOpacity
+        style={[styles.row, isSelected && styles.selectedRow]}
+        onPress={() => {
+          if (selectionMode) {
+            toggleExpenseSelection(item.id);
+          } else {
+            navigation.navigate('EditExpense', { expense: item });
+          }
+        }}
+        onLongPress={() => {
+          if (!selectionMode) {
+            setSelectionMode(true);
+            toggleExpenseSelection(item.id);
+          }
+        }}
+        activeOpacity={0.7}
+      >
+        {selectionMode && (
+          <View style={styles.checkboxContainer}>
+            <Icon
+              name={isSelected ? 'check-square' : 'square'}
+              size={20}
+              color={isSelected ? colors.primary : colors.text.tertiary}
+              solid={isSelected}
+            />
+          </View>
+        )}
+        <Text style={[styles.cell, styles.refCell]} numberOfLines={1}>
+          {item.ref}
+        </Text>
+        <Text style={[styles.cell, styles.dateCell]} numberOfLines={1}>
+          {item.date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+        </Text>
+        <Text style={[styles.cell, styles.descCell]} numberOfLines={2}>
+          {item.description}
+        </Text>
+        <Text style={[styles.cell, styles.categoryCell]} numberOfLines={1}>
+          {item.category}
+        </Text>
+        <Text style={[styles.cell, styles.amountCell, item.inAmount > 0 && styles.inAmount]}>
+          {item.inAmount > 0 ? `$${item.inAmount.toFixed(2)}` : '-'}
+        </Text>
+        <Text style={[styles.cell, styles.amountCell, item.outAmount > 0 && styles.outAmount]}>
+          {item.outAmount > 0 ? `$${item.outAmount.toFixed(2)}` : '-'}
+        </Text>
+        <Text style={[styles.cell, styles.amountCell, styles.balanceAmount]}>
+          ${item.balance.toFixed(2)}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
@@ -220,37 +356,109 @@ const ExpenseListScreen = ({ navigation }) => {
       </View>
 
       <View style={styles.bottomBar}>
-        <TouchableOpacity
-          style={[styles.actionButton, importing && styles.buttonDisabled]}
-          onPress={handleImport}
-          disabled={importing}
-        >
-          {importing ? (
-            <ActivityIndicator color="#666" size="small" />
-          ) : (
-            <Text style={styles.actionButtonText}>Import</Text>
-          )}
-        </TouchableOpacity>
+        {selectionMode ? (
+          <>
+            <TouchableOpacity
+              style={styles.selectionActionButton}
+              onPress={toggleSelectionMode}
+            >
+              <Text style={styles.selectionActionButtonText}>Cancel</Text>
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.actionButton, exporting && styles.buttonDisabled]}
-          onPress={handleExport}
-          disabled={exporting}
-        >
-          {exporting ? (
-            <ActivityIndicator color="#666" size="small" />
-          ) : (
-            <Text style={styles.actionButtonText}>Export</Text>
-          )}
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.selectionActionButton}
+              onPress={selectAll}
+            >
+              <Text style={styles.selectionActionButtonText}>
+                {selectedExpenses.size === expenses.length ? 'Deselect All' : 'Select All'}
+              </Text>
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={() => navigation.navigate('AddExpense')}
-        >
-          <Text style={styles.addButtonText}>+ Add</Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.deleteButton, (selectedExpenses.size === 0 || deleting) && styles.buttonDisabled]}
+              onPress={handleDeleteSelected}
+              disabled={selectedExpenses.size === 0 || deleting}
+            >
+              {deleting ? (
+                <ActivityIndicator color={colors.text.primary} size="small" />
+              ) : (
+                <Text style={styles.deleteButtonText}>
+                  Delete ({selectedExpenses.size})
+                </Text>
+              )}
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            <TouchableOpacity
+              style={[styles.actionButton, importing && styles.buttonDisabled]}
+              onPress={handleImport}
+              disabled={importing}
+            >
+              {importing ? (
+                <ActivityIndicator color="#666" size="small" />
+              ) : (
+                <Text style={styles.actionButtonText}>Import</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionButton, exporting && styles.buttonDisabled]}
+              onPress={handleExport}
+              disabled={exporting}
+            >
+              {exporting ? (
+                <ActivityIndicator color="#666" size="small" />
+              ) : (
+                <Text style={styles.actionButtonText}>Export</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.addButton}
+              onPress={() => navigation.navigate('AddExpense')}
+            >
+              <Text style={styles.addButtonText}>+ Add</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
+
+      {/* Import Progress Modal */}
+      <Modal
+        visible={showProgressModal}
+        transparent={true}
+        animationType="fade"
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Importing Expenses</Text>
+            <Text style={styles.modalProgress}>
+              {importProgress.total > 0
+                ? `${importProgress.current} of ${importProgress.total} expenses`
+                : 'Preparing...'}
+            </Text>
+            <View style={styles.progressBarContainer}>
+              <View
+                style={[
+                  styles.progressBar,
+                  {
+                    width: importProgress.total > 0
+                      ? `${(importProgress.current / importProgress.total) * 100}%`
+                      : '0%'
+                  }
+                ]}
+              />
+            </View>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={handleCancelImport}
+            >
+              <Text style={styles.cancelButtonText}>Cancel Import</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -425,6 +633,95 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.5,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: colors.backgroundCard,
+    borderRadius: 15,
+    padding: 30,
+    width: '80%',
+    maxWidth: 400,
+    borderWidth: 1,
+    borderColor: colors.glass.border,
+    ...shadows.lg,
+  },
+  modalTitle: {
+    ...typography.h3,
+    textAlign: 'center',
+    marginBottom: 15,
+  },
+  modalProgress: {
+    ...typography.body,
+    textAlign: 'center',
+    marginBottom: 20,
+    color: colors.text.secondary,
+  },
+  progressBarContainer: {
+    height: 8,
+    backgroundColor: colors.glass.borderLight,
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginBottom: 20,
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: colors.primary,
+    borderRadius: 4,
+  },
+  cancelButton: {
+    backgroundColor: colors.expense,
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: colors.text.primary,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  checkboxContainer: {
+    paddingRight: 8,
+    paddingLeft: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  selectedRow: {
+    backgroundColor: colors.glass.background,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
+  },
+  selectionActionButton: {
+    flex: 1,
+    backgroundColor: colors.glass.background,
+    paddingVertical: 15,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.glass.borderLight,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  selectionActionButtonText: {
+    color: colors.text.secondary,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  deleteButton: {
+    flex: 1,
+    backgroundColor: colors.expense,
+    paddingVertical: 15,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  deleteButtonText: {
+    color: colors.text.primary,
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 

@@ -79,12 +79,13 @@ const parseCSVLine = (line) => {
 /**
  * Parse date flexibly - handles any Excel/Google Sheets date format
  * Strategies: Excel serial numbers, US/EU formats, ISO formats
- * Never throws errors - falls back to current date
+ * Never throws errors - falls back to 11/11/11 for invalid dates
  */
 const parseFlexibleDate = (dateValue) => {
-  // If no date provided, use current date
-  if (!dateValue || dateValue.toString().trim() === '') {
-    return new Date();
+  // If no date provided or invalid date marker (########), use default date
+  if (!dateValue || dateValue.toString().trim() === '' || dateValue.toString().includes('#')) {
+    console.log(`[Import] Invalid or missing date detected: "${dateValue}" → using default 11/11/11`);
+    return new Date(2011, 10, 11); // November 11, 2011
   }
 
   const dateStr = dateValue.toString().trim();
@@ -206,9 +207,9 @@ const parseFlexibleDate = (dateValue) => {
     // Continue to fallback
   }
 
-  // Strategy 6: Fallback to current date (never fail)
-  console.log(`[Import] Using current date for unrecognized format: "${dateStr}"`);
-  return new Date();
+  // Strategy 6: Fallback to default date 11/11/11 (never fail)
+  console.log(`[Import] Using default date 11/11/11 for unrecognized format: "${dateStr}"`);
+  return new Date(2011, 10, 11); // November 11, 2011
 };
 
 /**
@@ -254,9 +255,11 @@ const rowToExpense = (row) => {
  * Import expenses from Google Sheets
  * @param {string} url - Google Sheets URL
  * @param {string} userId - Firebase user ID
+ * @param {function} onProgress - Progress callback (current, total)
+ * @param {AbortSignal} signal - Abort signal for cancellation
  * @returns {Promise<number>} - Number of expenses imported
  */
-export const importFromGoogleSheets = async (url, userId) => {
+export const importFromGoogleSheets = async (url, userId, onProgress = null, signal = null) => {
   try {
     // Parse URL to get spreadsheet ID and GID
     const { spreadsheetId, gid } = parseGoogleSheetsUrl(url);
@@ -284,7 +287,21 @@ export const importFromGoogleSheets = async (url, userId) => {
     let skippedCount = 0;
     console.log(`[Import] Starting batch import of ${rows.length} rows...`);
 
-    for (const row of rows) {
+    // Report initial progress
+    if (onProgress) {
+      onProgress(0, rows.length);
+    }
+
+    for (let i = 0; i < rows.length; i++) {
+      // Check if import was cancelled
+      if (signal && signal.aborted) {
+        console.log('[Import] Import cancelled by user');
+        const error = new Error('Import cancelled');
+        error.name = 'AbortError';
+        throw error;
+      }
+
+      const row = rows[i];
       try {
         const expenseData = rowToExpense(row);
 
@@ -293,6 +310,11 @@ export const importFromGoogleSheets = async (url, userId) => {
           // Skip sync during bulk import for performance
           await addExpense(expenseData, { skipSync: true });
           importedCount++;
+
+          // Report progress
+          if (onProgress) {
+            onProgress(importedCount, rows.length);
+          }
 
           // Log progress every 50 rows
           if (importedCount % 50 === 0) {

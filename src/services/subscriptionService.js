@@ -89,7 +89,13 @@ export const checkSubscriptionStatus = async () => {
     return SUBSCRIPTION_STATUS.EXPIRED;
 
   } catch (error) {
-    console.error('[SubscriptionService] Error checking subscription:', error);
+    // Suppress error in development if RevenueCat is not initialized (expected in Expo Go)
+    if (__DEV__ && error.message && error.message.includes('singleton instance')) {
+      // This is expected in Expo Go - RevenueCat requires EAS Build
+      // Silently return NONE status
+    } else {
+      console.error('[SubscriptionService] Error checking subscription:', error);
+    }
 
     // Return cached status if available (offline fallback)
     const cachedStatus = await AsyncStorage.getItem(SUBSCRIPTION_CACHE_KEY);
