@@ -8,6 +8,8 @@ import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { FontAwesome5 as Icon } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { initializeRevenueCat, loginUser } from './src/services/subscriptionService';
+import { LinearGradient } from 'expo-linear-gradient';
+import { colors } from './src/theme/colors';
 
 // Screens
 import LoginScreen from './src/screens/LoginScreen';
@@ -25,6 +27,7 @@ import ReportHistoryScreen from './src/screens/ReportHistoryScreen';
 import GoalsDashboardScreen from './src/screens/GoalsDashboardScreen';
 import CreateGoalScreen from './src/screens/CreateGoalScreen';
 import GoalDetailScreen from './src/screens/GoalDetailScreen';
+import InvitationsScreen from './src/screens/InvitationsScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -53,22 +56,54 @@ const TabNavigator = () => (
           iconName = 'cog';
         }
 
-        return <Icon name={iconName} size={size - 2} color={color} solid />;
+        return (
+          <View style={{
+            width: focused ? 56 : 48,
+            height: focused ? 56 : 48,
+            borderRadius: 28,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: focused ? 'rgba(0, 217, 255, 0.15)' : 'transparent',
+          }}>
+            <Icon
+              name={iconName}
+              size={focused ? 24 : 20}
+              color={focused ? colors.primary : colors.text.tertiary}
+              solid={focused}
+            />
+          </View>
+        );
       },
-      tabBarActiveTintColor: '#6C63FF',
-      tabBarInactiveTintColor: '#999',
+      tabBarActiveTintColor: colors.primary,
+      tabBarInactiveTintColor: colors.text.tertiary,
       tabBarStyle: {
-        backgroundColor: '#FFF',
+        position: 'absolute',
+        backgroundColor: colors.background,
         borderTopWidth: 1,
-        borderTopColor: '#F0F0F0',
-        height: 60,
-        paddingBottom: 8,
+        borderTopColor: colors.glass.borderLight,
+        height: 85,
+        paddingBottom: 20,
         paddingTop: 8,
+        paddingHorizontal: 16,
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
+        elevation: 8,
       },
       tabBarLabelStyle: {
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: '600',
+        marginTop: -4,
       },
+      tabBarBackground: () => (
+        <View style={{
+          flex: 1,
+          backgroundColor: 'rgba(10, 14, 39, 0.95)',
+          borderTopWidth: 1,
+          borderTopColor: colors.glass.border,
+        }} />
+      ),
     })}
   >
     <Tab.Screen name="Home" component={HomeScreen} />
@@ -147,6 +182,13 @@ const MainStack = () => (
         headerShown: false
       }}
     />
+    <Stack.Screen
+      name="Invitations"
+      component={InvitationsScreen}
+      options={{
+        headerShown: false
+      }}
+    />
   </Stack.Navigator>
 );
 
@@ -154,8 +196,18 @@ const RootNavigator = () => {
   const { user, loading } = useAuth();
 
   // Initialize RevenueCat on app launch
+  // DISABLED in Expo Go - only works in EAS Build
   useEffect(() => {
     const initRevenueCat = async () => {
+      // Skip RevenueCat in development/Expo Go
+      // RevenueCat requires native modules not available in Expo Go
+      if (__DEV__) {
+        console.log('[App] Skipping RevenueCat initialization in development');
+        console.log('[App] Subscription features will be unavailable');
+        console.log('[App] To test subscriptions: use EAS Build (eas build -p ios)');
+        return;
+      }
+
       try {
         const REVENUECAT_IOS_API_KEY = process.env.REVENUECAT_IOS_API_KEY || 'test_kPJQuUnNcPqdAlnYATBQGahqFKX';
         console.log('[App] Initializing RevenueCat...');
@@ -164,7 +216,6 @@ const RootNavigator = () => {
           console.log('[App] RevenueCat initialized successfully');
         } else {
           console.warn('[App] RevenueCat initialization failed - continuing without subscriptions');
-          console.warn('[App] Note: RevenueCat requires EAS Build or development build to work');
         }
       } catch (error) {
         console.error('[App] RevenueCat initialization error:', error.message);
@@ -176,8 +227,14 @@ const RootNavigator = () => {
   }, []);
 
   // Log in user to RevenueCat when authenticated
+  // DISABLED in Expo Go - only works in EAS Build
   useEffect(() => {
     const loginToRevenueCat = async () => {
+      // Skip RevenueCat in development/Expo Go
+      if (__DEV__) {
+        return;
+      }
+
       if (user && user.uid) {
         try {
           console.log('[App] Logging user into RevenueCat:', user.uid);
@@ -195,7 +252,7 @@ const RootNavigator = () => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2196F3" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -222,6 +279,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.background,
   },
 });

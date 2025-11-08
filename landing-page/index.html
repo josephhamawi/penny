@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penny - Your AI for Smarter Spending</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts - Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        penny: {
+                            50: '#ecfeff',
+                            100: '#cffafe',
+                            200: '#a5f3fc',
+                            300: '#67e8f9',
+                            400: '#22d3ee',
+                            500: '#14d4cc',
+                            600: '#0891b2',
+                            700: '#0e7490',
+                        },
+                        gold: {
+                            50: '#fefce8',
+                            100: '#fef9c3',
+                            200: '#fef08a',
+                            300: '#fde047',
+                            400: '#facc15',
+                            500: '#eab308',
+                            600: '#ca8a04',
+                        },
+                        slate: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            300: '#cbd5e1',
+                            400: '#94a3b8',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        }
+                    },
+                    fontFamily: {
+                        'poppins': ['Poppins', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+
+        /* Smooth scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Fade in animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .fade-in {
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        /* Stagger animation delays */
+        .delay-1 { animation-delay: 0.1s; animation-fill-mode: both; }
+        .delay-2 { animation-delay: 0.2s; animation-fill-mode: both; }
+        .delay-3 { animation-delay: 0.3s; animation-fill-mode: both; }
+        .delay-4 { animation-delay: 0.4s; animation-fill-mode: both; }
+
+        /* Button hover effect */
+        .btn-primary {
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(20, 212, 204, 0.4);
+        }
+
+        /* Glass effect */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        /* Gradient background */
+        .gradient-bg {
+            background: linear-gradient(135deg, #f0fdf9 0%, #fefce8 50%, #f8fafc 100%);
+        }
+    </style>
+</head>
+<body class="gradient-bg">
+
+    <!-- Hero Section -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden">
+        <!-- Decorative elements -->
+        <div class="absolute top-20 right-10 w-72 h-72 bg-penny-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse"></div>
+        <div class="absolute bottom-20 left-10 w-72 h-72 bg-gold-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-pulse" style="animation-delay: 1s;"></div>
+
+        <div class="max-w-5xl mx-auto text-center relative z-10">
+            <!-- Logo -->
+            <div class="mb-8 fade-in">
+                <div class="inline-flex items-center gap-3 bg-white px-8 py-4 rounded-full shadow-xl border-2 border-penny-400 mb-6">
+                    <img src="images/newicon.png" alt="Penny Icon" class="h-16">
+                    <div class="text-left">
+                        <h1 class="text-3xl font-bold text-slate-900">Penny</h1>
+                        <p class="text-xs text-penny-600 font-medium uppercase tracking-wide">Smarter Spending • Powered by AI</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Headline -->
+            <h2 class="text-5xl md:text-7xl font-bold text-slate-900 mb-6 fade-in delay-1">
+                Your AI for <span class="text-transparent bg-clip-text bg-gradient-to-r from-penny-500 to-penny-600">Smarter Spending</span>
+            </h2>
+
+            <!-- Subheadline -->
+            <p class="text-xl md:text-2xl text-slate-600 mb-10 max-w-3xl mx-auto fade-in delay-2">
+                Understand your habits. Save with intention. Spend freely.
+            </p>
+
+            <!-- CTA Button -->
+            <div class="fade-in delay-3">
+                <a href="#waitlist" class="btn-primary inline-block bg-gradient-to-r from-penny-500 to-penny-600 text-white font-semibold px-10 py-4 rounded-full text-lg shadow-lg hover:shadow-xl">
+                    Join the Waitlist
+                </a>
+                <p class="text-sm text-slate-500 mt-4">Launching soon on iOS</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- About / Why Penny Section -->
+    <section class="py-20 px-4">
+        <div class="max-w-6xl mx-auto">
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <!-- Text Content -->
+                <div class="fade-in">
+                    <h3 class="text-4xl font-bold text-slate-900 mb-6">Why Penny?</h3>
+                    <p class="text-lg text-slate-700 mb-4 leading-relaxed">
+                        Penny is more than just an expense tracker. It's your personal AI companion that understands
+                        <span class="font-semibold text-penny-600">how you think about money</span>, not just how you spend it.
+                    </p>
+                    <p class="text-lg text-slate-700 mb-6 leading-relaxed">
+                        Discover your unique "money personality," receive AI-powered micro-adjustments to hit your savings goals,
+                        and get weekly insights that feel personal—because they are. Better spending starts with better understanding.
+                    </p>
+
+                    <!-- Feature Pills -->
+                    <div class="flex flex-wrap gap-3">
+                        <span class="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm border border-slate-200">
+                            <span class="text-2xl">🧠</span>
+                            <span class="text-slate-700 font-medium">AI Insights</span>
+                        </span>
+                        <span class="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm border border-slate-200">
+                            <span class="text-2xl">🎯</span>
+                            <span class="text-slate-700 font-medium">Smart Goals</span>
+                        </span>
+                        <span class="inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full shadow-sm border border-slate-200">
+                            <span class="text-2xl">📊</span>
+                            <span class="text-slate-700 font-medium">Personality Reports</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Visual Placeholder -->
+                <div class="fade-in delay-1">
+                    <!-- TODO: Replace with actual app screenshot or illustration -->
+                    <div class="glass-card rounded-3xl p-8 shadow-2xl">
+                        <div class="bg-gradient-to-br from-penny-100 to-gold-100 rounded-2xl h-96 flex items-center justify-center">
+                            <div class="text-center">
+                                <img src="images/newicon.png" alt="Penny Icon" class="mx-auto h-32 mb-4 opacity-80">
+                                <p class="text-slate-600 font-medium">App Preview Coming Soon</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Preview Section -->
+    <section class="py-20 px-4 bg-white/50">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16">
+                <h3 class="text-4xl font-bold text-slate-900 mb-4">Features that empower you</h3>
+                <p class="text-lg text-slate-600 max-w-2xl mx-auto">
+                    Everything you need to take control of your financial future, all in one beautiful app.
+                </p>
+            </div>
+
+            <!-- Feature Cards Grid -->
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+                <!-- Feature 1: Money Personality -->
+                <div class="glass-card rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow fade-in delay-1">
+                    <div class="w-14 h-14 bg-gradient-to-br from-penny-400 to-penny-600 rounded-xl flex items-center justify-center mb-4">
+                        <span class="text-3xl">🎭</span>
+                    </div>
+                    <h4 class="text-xl font-semibold text-slate-900 mb-3">Money Personality</h4>
+                    <p class="text-slate-600">
+                        Get monthly AI-generated personality reports that identify your spending style and emotional patterns around money.
+                    </p>
+                </div>
+
+                <!-- Feature 2: Smart Goals -->
+                <div class="glass-card rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow fade-in delay-2">
+                    <div class="w-14 h-14 bg-gradient-to-br from-gold-400 to-gold-600 rounded-xl flex items-center justify-center mb-4">
+                        <span class="text-3xl">🎯</span>
+                    </div>
+                    <h4 class="text-xl font-semibold text-slate-900 mb-3">Smart Goals</h4>
+                    <p class="text-slate-600">
+                        AI suggests realistic savings targets and micro-adjustments like "Cut coffee spending by $5/week to hit your goal."
+                    </p>
+                </div>
+
+                <!-- Feature 3: Success Predictions -->
+                <div class="glass-card rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow fade-in delay-3">
+                    <div class="w-14 h-14 bg-gradient-to-br from-penny-400 to-gold-500 rounded-xl flex items-center justify-center mb-4">
+                        <span class="text-3xl">📊</span>
+                    </div>
+                    <h4 class="text-xl font-semibold text-slate-900 mb-3">Success Predictions</h4>
+                    <p class="text-slate-600">
+                        Visual probability indicators show how likely you are to achieve your goals based on current spending patterns.
+                    </p>
+                </div>
+
+                <!-- Feature 4: Simple Tracking -->
+                <div class="glass-card rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow fade-in delay-4">
+                    <div class="w-14 h-14 bg-gradient-to-br from-slate-400 to-slate-600 rounded-xl flex items-center justify-center mb-4">
+                        <span class="text-3xl">✨</span>
+                    </div>
+                    <h4 class="text-xl font-semibold text-slate-900 mb-3">Simple Tracking</h4>
+                    <p class="text-slate-600">
+                        Beautiful, minimal expense management with Google Sheets sync. Track spending in seconds, not minutes.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Waitlist / Signup Section -->
+    <section id="waitlist" class="py-20 px-4">
+        <div class="max-w-2xl mx-auto text-center">
+            <h3 class="text-4xl font-bold text-slate-900 mb-4">Get Early Access</h3>
+            <p class="text-lg text-slate-600 mb-10">
+                Join the waitlist and be among the first to experience smarter spending with Penny.
+            </p>
+
+            <!-- Waitlist Form -->
+            <form id="waitlistForm" class="flex flex-col sm:flex-row gap-4 max-w-md mx-auto mb-6">
+                <input
+                    type="email"
+                    id="emailInput"
+                    placeholder="Enter your email"
+                    required
+                    class="flex-1 px-6 py-4 rounded-full border-2 border-slate-200 focus:border-penny-500 focus:outline-none text-slate-800 shadow-sm"
+                />
+                <button
+                    type="submit"
+                    class="btn-primary bg-gradient-to-r from-penny-500 to-penny-600 text-white font-semibold px-8 py-4 rounded-full shadow-lg hover:shadow-xl whitespace-nowrap"
+                >
+                    Join Waitlist
+                </button>
+            </form>
+
+            <!-- Success Message (hidden by default) -->
+            <div id="successMessage" class="hidden bg-penny-50 border-2 border-penny-500 text-penny-800 px-6 py-4 rounded-2xl max-w-md mx-auto">
+                <p class="font-semibold">🎉 You're on the list!</p>
+                <p class="text-sm mt-1">We'll notify you as soon as Penny launches.</p>
+            </div>
+
+            <p class="text-sm text-slate-500 mt-4">
+                We respect your privacy. No spam, ever.
+            </p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 px-4 border-t border-slate-200 bg-white/30">
+        <div class="max-w-6xl mx-auto">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+                <!-- Logo & Copyright -->
+                <div class="text-center md:text-left">
+                    <div class="flex items-center gap-2 justify-center md:justify-start mb-2">
+                        <img src="images/newicon.png" alt="Penny Icon" class="h-8">
+                        <span class="font-semibold text-slate-800">Penny</span>
+                    </div>
+                    <p class="text-sm text-slate-500">© 2025 Penny. All rights reserved.</p>
+                </div>
+
+                <!-- Links -->
+                <div class="flex gap-8">
+                    <a href="#privacy" class="text-slate-600 hover:text-penny-600 transition-colors text-sm font-medium">
+                        Privacy Policy
+                    </a>
+                    <a href="#contact" class="text-slate-600 hover:text-penny-600 transition-colors text-sm font-medium">
+                        Contact
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <!-- JavaScript for form handling -->
+    <script>
+        // ========================================
+        // FIREBASE CONFIGURATION (Same project, separate collections)
+        // ========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCVkypVjUxN4HdeRmGotHM36Vp8fycPzNY",
+            authDomain: "expenses-64949.firebaseapp.com",
+            projectId: "expenses-64949",
+            storageBucket: "expenses-64949.firebasestorage.app",
+            messagingSenderId: "896051349073",
+            appId: "1:896051349073:web:89c2f05a87a71708125a70",
+            measurementId: "G-2MM74MFJQX"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // ========================================
+        // VISITOR TRACKING
+        // ========================================
+        async function trackVisitor() {
+            try {
+                // Track in Firestore (separate collection for landing page)
+                await db.collection('landing_visitors').add({
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    userAgent: navigator.userAgent,
+                    referrer: document.referrer || 'Direct',
+                    page: window.location.pathname
+                });
+
+                // Also keep localStorage backup for offline
+                const visits = JSON.parse(localStorage.getItem('penny_visits') || '[]');
+                visits.push({
+                    timestamp: new Date().toISOString(),
+                    userAgent: navigator.userAgent,
+                    referrer: document.referrer || 'Direct'
+                });
+                localStorage.setItem('penny_visits', JSON.stringify(visits));
+
+                const count = parseInt(localStorage.getItem('penny_visitor_count') || '0');
+                localStorage.setItem('penny_visitor_count', (count + 1).toString());
+            } catch (error) {
+                console.error('Error tracking visitor:', error);
+                // Fallback to localStorage only
+                const visits = JSON.parse(localStorage.getItem('penny_visits') || '[]');
+                visits.push({
+                    timestamp: new Date().toISOString(),
+                    userAgent: navigator.userAgent,
+                    referrer: document.referrer || 'Direct'
+                });
+                localStorage.setItem('penny_visits', JSON.stringify(visits));
+
+                const count = parseInt(localStorage.getItem('penny_visitor_count') || '0');
+                localStorage.setItem('penny_visitor_count', (count + 1).toString());
+            }
+        }
+
+        // Track on page load
+        trackVisitor();
+
+        // ========================================
+        // WAITLIST EMAIL STORAGE
+        // ========================================
+        async function saveEmail(email) {
+            try {
+                // Save to Firestore (separate collection for landing page)
+                await db.collection('landing_waitlist').add({
+                    email: email,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    userAgent: navigator.userAgent
+                });
+
+                // Also backup to localStorage
+                const emails = JSON.parse(localStorage.getItem('penny_waitlist') || '[]');
+                if (!emails.some(entry => entry.email === email)) {
+                    emails.push({
+                        email: email,
+                        timestamp: new Date().toISOString()
+                    });
+                    localStorage.setItem('penny_waitlist', JSON.stringify(emails));
+                }
+
+                return true;
+            } catch (error) {
+                console.error('Error saving email:', error);
+                // Fallback to localStorage only
+                const emails = JSON.parse(localStorage.getItem('penny_waitlist') || '[]');
+                if (emails.some(entry => entry.email === email)) {
+                    return false; // Duplicate
+                }
+                emails.push({
+                    email: email,
+                    timestamp: new Date().toISOString()
+                });
+                localStorage.setItem('penny_waitlist', JSON.stringify(emails));
+                return true;
+            }
+        }
+
+        // ========================================
+        // WAITLIST FORM SUBMISSION
+        // ========================================
+        document.getElementById('waitlistForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('emailInput').value;
+
+            // Save to Firestore and localStorage
+            const saved = await saveEmail(email);
+
+            // Hide form
+            document.getElementById('waitlistForm').style.display = 'none';
+
+            // Show success message
+            document.getElementById('successMessage').classList.remove('hidden');
+        });
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>

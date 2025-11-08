@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penny Admin - Waitlist Dashboard</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts - Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        penny: {
+                            50: '#ecfeff',
+                            100: '#cffafe',
+                            200: '#a5f3fc',
+                            300: '#67e8f9',
+                            400: '#22d3ee',
+                            500: '#14d4cc',
+                            600: '#0891b2',
+                            700: '#0e7490',
+                        }
+                    },
+                    fontFamily: {
+                        'poppins': ['Poppins', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+
+    <!-- Login Screen -->
+    <div id="loginScreen" class="min-h-screen flex items-center justify-center px-4">
+        <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8">
+            <div class="text-center mb-8">
+                <div class="inline-flex items-center gap-3 mb-4">
+                    <img src="../images/newicon.png" alt="Penny Icon" class="h-12">
+                    <h1 class="text-2xl font-bold text-slate-900">Penny Admin</h1>
+                </div>
+                <p class="text-slate-600">Sign in to access dashboard</p>
+            </div>
+
+            <!-- Login Form -->
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Email</label>
+                    <input
+                        type="email"
+                        id="emailInput"
+                        placeholder="admin@penny.app"
+                        required
+                        class="w-full px-4 py-3 rounded-lg border-2 border-slate-200 focus:border-penny-500 focus:outline-none text-slate-800"
+                    />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Password</label>
+                    <input
+                        type="password"
+                        id="passwordInput"
+                        placeholder="Enter your password"
+                        required
+                        class="w-full px-4 py-3 rounded-lg border-2 border-slate-200 focus:border-penny-500 focus:outline-none text-slate-800"
+                    />
+                </div>
+                <div id="loginError" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm"></div>
+                <button
+                    type="submit"
+                    id="loginBtn"
+                    class="w-full bg-gradient-to-r from-penny-500 to-penny-600 text-white font-semibold px-6 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all"
+                >
+                    Sign In
+                </button>
+            </form>
+
+            <div class="mt-4 text-center">
+                <button id="forgotPasswordBtn" class="text-sm text-penny-600 hover:text-penny-700">
+                    Forgot password?
+                </button>
+            </div>
+
+            <div class="mt-6 pt-6 border-t border-slate-200">
+                <p class="text-xs text-slate-500 text-center">
+                    Secured with Firebase Authentication<br/>
+                    Need access? Contact your administrator
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Reset Modal -->
+    <div id="resetPasswordModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center px-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-slate-900">Reset Password</h2>
+                <button id="closeResetBtn" class="text-slate-400 hover:text-slate-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <form id="resetPasswordForm" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Email Address</label>
+                    <input
+                        type="email"
+                        id="resetEmailInput"
+                        placeholder="Enter your email"
+                        required
+                        class="w-full px-4 py-3 rounded-lg border-2 border-slate-200 focus:border-penny-500 focus:outline-none text-slate-800"
+                    />
+                </div>
+
+                <div id="resetError" class="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm"></div>
+                <div id="resetSuccess" class="hidden bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm"></div>
+
+                <button
+                    type="submit"
+                    class="w-full bg-gradient-to-r from-penny-500 to-penny-600 text-white font-semibold px-6 py-3 rounded-lg shadow-lg hover:shadow-xl transition-all"
+                >
+                    Send Reset Link
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="adminDashboard" class="hidden min-h-screen">
+        <!-- Header -->
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <img src="../images/newicon.png" alt="Penny Icon" class="h-10">
+                    <div>
+                        <h1 class="text-xl font-bold text-slate-900">Penny Admin</h1>
+                        <p class="text-sm text-slate-500">Waitlist Dashboard</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span class="text-sm text-slate-600" id="adminEmail"></span>
+                    <button
+                        id="settingsBtn"
+                        class="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
+                        title="Settings"
+                    >
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                    </button>
+                    <button
+                        id="logoutBtn"
+                        class="px-4 py-2 text-slate-600 hover:text-slate-900 font-medium transition-colors"
+                    >
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 py-8">
+
+            <!-- Stats Cards -->
+            <div class="grid md:grid-cols-3 gap-6 mb-8">
+                <!-- Total Visitors -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-medium text-slate-600">Total Visitors</h3>
+                        <span class="text-2xl">👥</span>
+                    </div>
+                    <p class="text-4xl font-bold text-slate-900" id="totalVisitors">0</p>
+                    <p class="text-sm text-slate-500 mt-2">Page views tracked</p>
+                </div>
+
+                <!-- Waitlist Signups -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 border border-penny-200 bg-gradient-to-br from-white to-penny-50">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-medium text-slate-600">Waitlist Signups</h3>
+                        <span class="text-2xl">✉️</span>
+                    </div>
+                    <p class="text-4xl font-bold text-penny-600" id="totalEmails">0</p>
+                    <p class="text-sm text-slate-500 mt-2">Email subscribers</p>
+                </div>
+
+                <!-- Conversion Rate -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-medium text-slate-600">Conversion Rate</h3>
+                        <span class="text-2xl">📈</span>
+                    </div>
+                    <p class="text-4xl font-bold text-slate-900" id="conversionRate">0%</p>
+                    <p class="text-sm text-slate-500 mt-2">Visitors to signups</p>
+                </div>
+            </div>
+
+            <!-- Waitlist Table -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-slate-200 mb-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-slate-900">Waitlist Emails</h2>
+                    <button
+                        id="exportBtn"
+                        class="px-4 py-2 bg-penny-500 text-white font-medium rounded-lg hover:bg-penny-600 transition-colors"
+                    >
+                        Export CSV
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-slate-200">
+                                <th class="text-left py-3 px-4 text-sm font-semibold text-slate-700">#</th>
+                                <th class="text-left py-3 px-4 text-sm font-semibold text-slate-700">Email</th>
+                                <th class="text-left py-3 px-4 text-sm font-semibold text-slate-700">Signup Date</th>
+                                <th class="text-left py-3 px-4 text-sm font-semibold text-slate-700">Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="emailTableBody">
+                            <tr>
+                                <td colspan="4" class="text-center py-8 text-slate-500">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Visitor Log -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
+                <h2 class="text-2xl font-bold text-slate-900 mb-6">Recent Visitors</h2>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-slate-200">
+                                <th class="text-left py-3 px-4 text-sm font-semibold text-slate-700">#</th>
+                                <th class="text-left py-3 px-4 text-sm font-semibold text-slate-700">Date</th>
+                                <th class="text-left py-3 px-4 text-sm font-semibold text-slate-700">Time</th>
+                                <th class="text-left py-3 px-4 text-sm font-semibold text-slate-700">Referrer</th>
+                            </tr>
+                        </thead>
+                        <tbody id="visitorTableBody">
+                            <tr>
+                                <td colspan="4" class="text-center py-8 text-slate-500">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center px-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-slate-900">Account Settings</h2>
+                <button id="closeSettingsBtn" class="text-slate-400 hover:text-slate-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div class="bg-slate-50 rounded-lg p-4">
+                    <p class="text-sm font-medium text-slate-700 mb-1">Signed in as:</p>
+                    <p class="text-lg font-semibold text-slate-900" id="settingsEmail"></p>
+                </div>
+
+                <button
+                    id="changePasswordBtn"
+                    class="w-full px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-900 font-medium rounded-lg transition-colors"
+                >
+                    Change Password
+                </button>
+
+                <button
+                    id="enableMFABtn"
+                    class="w-full px-4 py-3 bg-penny-100 hover:bg-penny-200 text-penny-900 font-medium rounded-lg transition-colors"
+                >
+                    🔐 Enable Multi-Factor Authentication
+                </button>
+
+                <div class="pt-4 border-t border-slate-200">
+                    <p class="text-xs text-slate-500 text-center">
+                        Protected with Firebase Authentication
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <!-- JavaScript -->
+    <script>
+        // ========================================
+        // FIREBASE CONFIGURATION (Same project, separate collections)
+        // ========================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCVkypVjUxN4HdeRmGotHM36Vp8fycPzNY",
+            authDomain: "expenses-64949.firebaseapp.com",
+            projectId: "expenses-64949",
+            storageBucket: "expenses-64949.firebasestorage.app",
+            messagingSenderId: "896051349073",
+            appId: "1:896051349073:web:89c2f05a87a71708125a70",
+            measurementId: "G-2MM74MFJQX"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // ========================================
+        // AUTHENTICATION STATE
+        // ========================================
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                showDashboard(user);
+            } else {
+                showLoginScreen();
+            }
+        });
+
+        function showDashboard(user) {
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('adminDashboard').classList.remove('hidden');
+            document.getElementById('adminEmail').textContent = user.email;
+            document.getElementById('settingsEmail').textContent = user.email;
+            loadDashboardData();
+        }
+
+        function showLoginScreen() {
+            document.getElementById('loginScreen').classList.remove('hidden');
+            document.getElementById('adminDashboard').classList.add('hidden');
+        }
+
+        // ========================================
+        // LOGIN
+        // ========================================
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            const loginBtn = document.getElementById('loginBtn');
+            const errorDiv = document.getElementById('loginError');
+
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Signing in...';
+            errorDiv.classList.add('hidden');
+
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+                // Dashboard will show automatically via onAuthStateChanged
+            } catch (error) {
+                console.error('Login error:', error);
+                errorDiv.textContent = getErrorMessage(error.code);
+                errorDiv.classList.remove('hidden');
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Sign In';
+            }
+        });
+
+        // ========================================
+        // PASSWORD RESET
+        // ========================================
+        document.getElementById('forgotPasswordBtn').addEventListener('click', function() {
+            document.getElementById('resetPasswordModal').classList.remove('hidden');
+            const email = document.getElementById('emailInput').value;
+            if (email) {
+                document.getElementById('resetEmailInput').value = email;
+            }
+        });
+
+        document.getElementById('closeResetBtn').addEventListener('click', function() {
+            document.getElementById('resetPasswordModal').classList.add('hidden');
+            document.getElementById('resetPasswordForm').reset();
+            document.getElementById('resetError').classList.add('hidden');
+            document.getElementById('resetSuccess').classList.add('hidden');
+        });
+
+        document.getElementById('resetPasswordForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('resetEmailInput').value;
+            const errorDiv = document.getElementById('resetError');
+            const successDiv = document.getElementById('resetSuccess');
+
+            errorDiv.classList.add('hidden');
+            successDiv.classList.add('hidden');
+
+            try {
+                await auth.sendPasswordResetEmail(email);
+                successDiv.textContent = 'Password reset link sent! Check your email.';
+                successDiv.classList.remove('hidden');
+
+                setTimeout(() => {
+                    document.getElementById('closeResetBtn').click();
+                }, 3000);
+            } catch (error) {
+                console.error('Password reset error:', error);
+                errorDiv.textContent = getErrorMessage(error.code);
+                errorDiv.classList.remove('hidden');
+            }
+        });
+
+        // ========================================
+        // LOGOUT
+        // ========================================
+        document.getElementById('logoutBtn').addEventListener('click', async function() {
+            try {
+                await auth.signOut();
+            } catch (error) {
+                console.error('Logout error:', error);
+                alert('Error logging out. Please try again.');
+            }
+        });
+
+        // ========================================
+        // SETTINGS MODAL
+        // ========================================
+        document.getElementById('settingsBtn').addEventListener('click', function() {
+            document.getElementById('settingsModal').classList.remove('hidden');
+        });
+
+        document.getElementById('closeSettingsBtn').addEventListener('click', function() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        });
+
+        document.getElementById('changePasswordBtn').addEventListener('click', async function() {
+            const user = auth.currentUser;
+            if (user && user.email) {
+                try {
+                    await auth.sendPasswordResetEmail(user.email);
+                    alert('Password reset link sent to ' + user.email);
+                } catch (error) {
+                    console.error('Error sending password reset:', error);
+                    alert('Error sending password reset email. Please try again.');
+                }
+            }
+        });
+
+        document.getElementById('enableMFABtn').addEventListener('click', function() {
+            alert('Multi-factor authentication setup:\n\n1. Go to Firebase Console\n2. Navigate to Authentication → Settings\n3. Enable Phone authentication for MFA\n4. Users can enroll in Settings\n\nNote: This requires additional Firebase configuration.');
+        });
+
+        // ========================================
+        // DASHBOARD DATA
+        // ========================================
+        async function loadDashboardData() {
+            try {
+                // Load visitors (separate landing page collection)
+                const visitorsSnapshot = await db.collection('landing_visitors').get();
+                const visitorCount = visitorsSnapshot.size;
+                document.getElementById('totalVisitors').textContent = visitorCount;
+
+                // Load waitlist (separate landing page collection)
+                const waitlistSnapshot = await db.collection('landing_waitlist').orderBy('timestamp', 'desc').get();
+                const emails = [];
+                waitlistSnapshot.forEach((doc) => {
+                    emails.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                document.getElementById('totalEmails').textContent = emails.length;
+
+                // Calculate conversion rate
+                const conversionRate = visitorCount > 0 ? ((emails.length / visitorCount) * 100).toFixed(1) : 0;
+                document.getElementById('conversionRate').textContent = conversionRate + '%';
+
+                // Populate tables
+                populateEmailTable(emails);
+                populateVisitorTable(visitorsSnapshot);
+
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+                // Fallback to localStorage if Firestore fails
+                const emails = JSON.parse(localStorage.getItem('penny_waitlist') || '[]');
+                const visitorCount = parseInt(localStorage.getItem('penny_visitor_count') || '0');
+
+                document.getElementById('totalVisitors').textContent = visitorCount;
+                document.getElementById('totalEmails').textContent = emails.length;
+
+                const conversionRate = visitorCount > 0 ? ((emails.length / visitorCount) * 100).toFixed(1) : 0;
+                document.getElementById('conversionRate').textContent = conversionRate + '%';
+
+                populateEmailTable(emails);
+            }
+        }
+
+        function populateEmailTable(emails) {
+            const tbody = document.getElementById('emailTableBody');
+
+            if (emails.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-slate-500">No signups yet</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = emails.map((entry, index) => {
+                const timestamp = entry.timestamp;
+                let date;
+
+                if (timestamp && timestamp.toDate) {
+                    date = timestamp.toDate();
+                } else if (typeof timestamp === 'string') {
+                    date = new Date(timestamp);
+                } else {
+                    date = new Date();
+                }
+
+                return `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                        <td class="py-3 px-4 text-sm text-slate-600">${index + 1}</td>
+                        <td class="py-3 px-4 text-sm font-medium text-slate-900">${entry.email}</td>
+                        <td class="py-3 px-4 text-sm text-slate-600">${date.toLocaleDateString()}</td>
+                        <td class="py-3 px-4 text-sm text-slate-600">${date.toLocaleTimeString()}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function populateVisitorTable(visitorsSnapshot) {
+            const tbody = document.getElementById('visitorTableBody');
+            const visitors = [];
+
+            visitorsSnapshot.forEach((doc) => {
+                visitors.push(doc.data());
+            });
+
+            if (visitors.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-slate-500">No visitors yet</td></tr>';
+                return;
+            }
+
+            // Show only last 50 visits
+            const recentVisits = visitors.slice(-50).reverse();
+
+            tbody.innerHTML = recentVisits.map((visit, index) => {
+                const timestamp = visit.timestamp;
+                let date;
+
+                if (timestamp && timestamp.toDate) {
+                    date = timestamp.toDate();
+                } else {
+                    date = new Date();
+                }
+
+                return `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                        <td class="py-3 px-4 text-sm text-slate-600">${index + 1}</td>
+                        <td class="py-3 px-4 text-sm text-slate-600">${date.toLocaleDateString()}</td>
+                        <td class="py-3 px-4 text-sm text-slate-600">${date.toLocaleTimeString()}</td>
+                        <td class="py-3 px-4 text-sm text-slate-600">${visit.referrer || 'Direct'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // ========================================
+        // EXPORT FUNCTIONALITY
+        // ========================================
+        document.getElementById('exportBtn').addEventListener('click', async function() {
+            try {
+                const waitlistSnapshot = await db.collection('landing_waitlist').orderBy('timestamp', 'desc').get();
+                const emails = [];
+
+                waitlistSnapshot.forEach((doc) => {
+                    emails.push(doc.data());
+                });
+
+                if (emails.length === 0) {
+                    alert('No emails to export');
+                    return;
+                }
+
+                // Create CSV content
+                let csv = 'Email,Signup Date,Signup Time\n';
+                emails.forEach(entry => {
+                    const timestamp = entry.timestamp;
+                    let date;
+
+                    if (timestamp && timestamp.toDate) {
+                        date = timestamp.toDate();
+                    } else if (typeof timestamp === 'string') {
+                        date = new Date(timestamp);
+                    } else {
+                        date = new Date();
+                    }
+
+                    csv += `${entry.email},${date.toLocaleDateString()},${date.toLocaleTimeString()}\n`;
+                });
+
+                // Download CSV file
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `penny-waitlist-${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Export error:', error);
+                alert('Error exporting data. Please try again.');
+            }
+        });
+
+        // ========================================
+        // ERROR MESSAGES
+        // ========================================
+        function getErrorMessage(errorCode) {
+            const errorMessages = {
+                'auth/invalid-email': 'Invalid email address format.',
+                'auth/user-disabled': 'This account has been disabled.',
+                'auth/user-not-found': 'No account found with this email.',
+                'auth/wrong-password': 'Incorrect password.',
+                'auth/too-many-requests': 'Too many failed login attempts. Please try again later.',
+                'auth/network-request-failed': 'Network error. Please check your connection.',
+                'auth/invalid-credential': 'Invalid email or password.'
+            };
+
+            return errorMessages[errorCode] || 'An error occurred. Please try again.';
+        }
+
+        // Close modals when clicking outside
+        document.getElementById('resetPasswordModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                document.getElementById('closeResetBtn').click();
+            }
+        });
+
+        document.getElementById('settingsModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                document.getElementById('closeSettingsBtn').click();
+            }
+        });
+    </script>
+
+</body>
+</html>

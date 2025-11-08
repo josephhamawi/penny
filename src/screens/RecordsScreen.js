@@ -10,13 +10,14 @@ import {
   RefreshControl
 } from 'react-native';
 import { FontAwesome5 as Icon } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import Toast from 'react-native-toast-message';
 import { useAuth } from '../contexts/AuthContext';
 import { subscribeToExpenses } from '../services/expenseService';
 import { exportToExcel } from '../utils/csvExport';
-import { importFromGoogleSheets } from '../services/googleSheetsService';
 import { getCategoryConfig } from '../config/categories';
 import { formatCurrency } from '../utils/formatNumber';
+import { colors, shadows, typography } from '../theme/colors';
 
 const RecordsScreen = ({ navigation }) => {
   const [expenses, setExpenses] = useState([]);
@@ -24,7 +25,6 @@ const RecordsScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState('All');
   const [exporting, setExporting] = useState(false);
-  const [importing, setImporting] = useState(false);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -80,54 +80,6 @@ const RecordsScreen = ({ navigation }) => {
     }
   };
 
-  const handleImport = () => {
-    Alert.prompt(
-      'Import from Google Sheets',
-      'Enter the Google Sheets URL:\n\nMake sure the sheet is shared publicly with "Anyone with the link can view".\n\nExpected columns:\n• Date (format: mm/dd/YYYY)\n• Description\n• Category (optional, defaults to "Other")\n• In\n• Out',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel'
-        },
-        {
-          text: 'Import',
-          onPress: async (url) => {
-            if (!url || !url.trim()) {
-              Toast.show({
-                type: 'error',
-                text1: 'Invalid URL',
-                text2: 'Please enter a valid Google Sheets URL',
-                position: 'bottom',
-              });
-              return;
-            }
-
-            setImporting(true);
-            try {
-              const count = await importFromGoogleSheets(url.trim(), user.uid);
-              Toast.show({
-                type: 'success',
-                text1: 'Import Successful',
-                text2: `Imported ${count} expense${count !== 1 ? 's' : ''} from Google Sheets`,
-                position: 'bottom',
-              });
-            } catch (error) {
-              Toast.show({
-                type: 'error',
-                text1: 'Import Failed',
-                text2: error.message || 'Failed to import from Google Sheets',
-                position: 'bottom',
-              });
-            } finally {
-              setImporting(false);
-            }
-          }
-        }
-      ],
-      'plain-text'
-    );
-  };
-
   const onRefresh = () => {
     setRefreshing(true);
   };
@@ -147,7 +99,7 @@ const RecordsScreen = ({ navigation }) => {
             <Icon
               name={isIncome ? 'arrow-up' : 'arrow-down'}
               size={14}
-              color={isIncome ? '#4CAF50' : '#F44336'}
+              color={isIncome ? colors.income : colors.expense}
               solid
             />
           </View>
@@ -184,7 +136,7 @@ const RecordsScreen = ({ navigation }) => {
 
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <Icon name="receipt" size={80} color="#E0E0E0" />
+      <Icon name="receipt" size={80} color={colors.glass.borderLight} />
       <Text style={styles.emptyText}>No expenses yet</Text>
       <Text style={styles.emptySubtext}>Tap + to add your first expense</Text>
     </View>
@@ -193,15 +145,20 @@ const RecordsScreen = ({ navigation }) => {
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#6C63FF" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
+      {/* Header with Gradient */}
+      <LinearGradient
+        colors={[colors.primaryDark, colors.primary]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
         <View>
           <Text style={styles.headerTitle}>Records</Text>
           <Text style={styles.headerSubtitle}>{expenses.length} transactions</Text>
@@ -209,28 +166,17 @@ const RecordsScreen = ({ navigation }) => {
         <View style={styles.headerActions}>
           <TouchableOpacity
             style={styles.headerButton}
-            onPress={handleImport}
-            disabled={importing}
-          >
-            {importing ? (
-              <ActivityIndicator size="small" color="#6C63FF" />
-            ) : (
-              <Icon name="cloud-download-alt" size={20} color="#6C63FF" solid />
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.headerButton}
             onPress={handleExport}
             disabled={exporting}
           >
             {exporting ? (
-              <ActivityIndicator size="small" color="#6C63FF" />
+              <ActivityIndicator size="small" color={colors.text.primary} />
             ) : (
-              <Icon name="file-upload" size={20} color="#6C63FF" solid />
+              <Icon name="file-upload" size={20} color={colors.text.primary} solid />
             )}
           </TouchableOpacity>
         </View>
-      </View>
+      </LinearGradient>
 
       {/* List */}
       <FlatList
@@ -239,7 +185,7 @@ const RecordsScreen = ({ navigation }) => {
         keyExtractor={(item) => item.id}
         ListEmptyComponent={renderEmpty}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#6C63FF']} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />
         }
         contentContainerStyle={[
           styles.listContent,
@@ -262,33 +208,31 @@ const RecordsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F6FA',
+    backgroundColor: colors.background,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5F6FA',
+    backgroundColor: colors.background,
   },
   header: {
-    backgroundColor: '#FFF',
     paddingTop: 60,
     paddingBottom: 20,
     paddingHorizontal: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
   headerTitle: {
+    ...typography.h1,
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: '#999',
+    ...typography.caption,
+    opacity: 0.9,
     marginTop: 4,
   },
   headerActions: {
@@ -299,7 +243,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F5F6FA',
+    backgroundColor: colors.glass.background,
+    borderWidth: 1,
+    borderColor: colors.glass.borderLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -312,15 +258,13 @@ const styles = StyleSheet.create({
   recordCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF',
+    backgroundColor: colors.glass.background,
+    borderWidth: 1,
+    borderColor: colors.glass.borderLight,
     padding: 15,
     borderRadius: 15,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    ...shadows.sm,
   },
   iconContainer: {
     width: 56,
@@ -342,7 +286,7 @@ const styles = StyleSheet.create({
   recordDescription: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: colors.text.primary,
     marginBottom: 6,
   },
   recordMeta: {
@@ -351,16 +295,16 @@ const styles = StyleSheet.create({
   },
   recordCategory: {
     fontSize: 13,
-    color: '#999',
+    color: colors.text.secondary,
   },
   recordDot: {
     fontSize: 13,
-    color: '#999',
+    color: colors.text.secondary,
     marginHorizontal: 6,
   },
   recordDate: {
     fontSize: 13,
-    color: '#999',
+    color: colors.text.secondary,
   },
   recordRight: {
     alignItems: 'flex-end',
@@ -371,10 +315,10 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   income: {
-    color: '#4CAF50',
+    color: colors.income,
   },
   expense: {
-    color: '#F44336',
+    color: colors.expense,
   },
   statusBadge: {
     paddingHorizontal: 12,
@@ -382,20 +326,20 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   incomeBadge: {
-    backgroundColor: '#E8F5E9',
+    backgroundColor: 'rgba(0, 255, 163, 0.15)',
   },
   expenseBadge: {
-    backgroundColor: '#FFEBEE',
+    backgroundColor: 'rgba(255, 107, 157, 0.15)',
   },
   statusText: {
     fontSize: 11,
     fontWeight: '600',
   },
   incomeText: {
-    color: '#4CAF50',
+    color: colors.income,
   },
   expenseText: {
-    color: '#F44336',
+    color: colors.expense,
   },
   emptyContainer: {
     flex: 1,
@@ -406,29 +350,25 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#999',
+    color: colors.text.secondary,
     marginTop: 20,
     marginBottom: 8,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#CCC',
+    color: colors.text.tertiary,
   },
   fab: {
     position: 'absolute',
     right: 20,
-    bottom: 20,
+    bottom: 100,
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#6C63FF',
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#6C63FF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    ...shadows.glow,
   },
 });
 

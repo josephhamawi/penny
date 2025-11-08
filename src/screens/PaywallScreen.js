@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { FontAwesome5 as Icon } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { colors, shadows, typography } from '../theme/colors';
 
 /**
  * Paywall Screen
@@ -34,15 +35,15 @@ const PaywallScreen = ({ navigation, route }) => {
   const mockOfferings = {
     monthly: {
       identifier: '$rc_monthly',
-      price: '$10',
-      priceString: '$10/month',
+      price: '$4.99',
+      priceString: '$4.99/month',
       description: '14-day free trial',
       buttonText: 'Start Free Trial',
     },
     lifetime: {
       identifier: 'expense_monitor_lifetime',
-      price: '$199',
-      priceString: '$199 one-time',
+      price: '$149.99',
+      priceString: '$149.99 one-time',
       description: 'One-time payment',
       buttonText: 'Buy Lifetime Access',
     },
@@ -109,19 +110,19 @@ const PaywallScreen = ({ navigation, route }) => {
         style={styles.closeButton}
         onPress={() => navigation.goBack()}
       >
-        <Icon name="times" size={24} color="#333" />
+        <Icon name="times" size={24} color={colors.text.primary} />
       </TouchableOpacity>
 
       {/* Header with Gradient Icon Background */}
       <View style={styles.header}>
         <View style={styles.iconWrapper}>
           <LinearGradient
-            colors={['#1976D2', '#00BFA6']}
+            colors={colors.primaryGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.gradientIcon}
           >
-            <Icon name="gem" size={40} color="#FFF" solid />
+            <Icon name="gem" size={40} color={colors.text.primary} solid />
           </LinearGradient>
         </View>
         <Text style={styles.title}>Unlock AI-Powered Insights</Text>
@@ -140,7 +141,7 @@ const PaywallScreen = ({ navigation, route }) => {
         ].map((feature, index) => (
           <View key={index} style={styles.featureRow}>
             <View style={styles.checkCircle}>
-              <Icon name="check" size={14} color="#FFF" />
+              <Icon name="check" size={14} color={colors.text.primary} />
             </View>
             <Text style={styles.featureText}>{feature}</Text>
           </View>
@@ -162,13 +163,18 @@ const PaywallScreen = ({ navigation, route }) => {
           <Text style={styles.planName}>Monthly</Text>
           <Text style={styles.planPrice}>{mockOfferings.monthly.priceString}</Text>
           <Text style={styles.trialText}>{mockOfferings.monthly.description}</Text>
-          <View style={styles.purchaseButton}>
+          <LinearGradient
+            colors={colors.primaryGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.purchaseButton}
+          >
             {purchasing ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.text.primary} />
             ) : (
               <Text style={styles.buttonText}>{mockOfferings.monthly.buttonText}</Text>
             )}
-          </View>
+          </LinearGradient>
           <Text style={styles.disclaimer}>Cancel anytime</Text>
         </TouchableOpacity>
 
@@ -182,11 +188,11 @@ const PaywallScreen = ({ navigation, route }) => {
           <Text style={styles.planName}>Lifetime</Text>
           <Text style={styles.planPrice}>{mockOfferings.lifetime.priceString}</Text>
           <Text style={styles.trialText}>{mockOfferings.lifetime.description}</Text>
-          <View style={[styles.purchaseButton, styles.lifetimeButton]}>
+          <View style={styles.lifetimeButton}>
             {purchasing ? (
-              <ActivityIndicator color="#1976D2" />
+              <ActivityIndicator color={colors.primary} />
             ) : (
-              <Text style={[styles.buttonText, { color: '#1976D2' }]}>
+              <Text style={[styles.buttonText, { color: colors.primary }]}>
                 {mockOfferings.lifetime.buttonText}
               </Text>
             )}
@@ -215,7 +221,7 @@ const PaywallScreen = ({ navigation, route }) => {
 
       {/* Mock Data Notice */}
       <View style={styles.mockNotice}>
-        <Icon name="info-circle" size={16} color="#FF9800" />
+        <Icon name="info-circle" size={16} color={colors.warning} />
         <Text style={styles.mockNoticeText}>
           Using mock data - Will connect to real subscriptions when Agent 2 is ready
         </Text>
@@ -227,7 +233,7 @@ const PaywallScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F6FA',
+    backgroundColor: colors.background,
   },
   content: {
     padding: 20,
@@ -251,36 +257,27 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
+    ...shadows.glow,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
+    ...typography.h1,
     textAlign: 'center',
     marginBottom: 10,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
+    ...typography.bodySecondary,
     textAlign: 'center',
     paddingHorizontal: 20,
     lineHeight: 24,
   },
   featuresSection: {
     marginBottom: 30,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.glass.background,
     borderRadius: 15,
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: colors.glass.border,
+    ...shadows.md,
   },
   featureRow: {
     flexDirection: 'row',
@@ -291,14 +288,13 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#00BFA6',
+    backgroundColor: colors.income,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
   },
   featureText: {
-    fontSize: 16,
-    color: '#333',
+    ...typography.body,
     flex: 1,
     lineHeight: 22,
   },
@@ -306,25 +302,23 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   planCard: {
-    backgroundColor: '#FFF',
+    backgroundColor: colors.glass.background,
     borderRadius: 15,
     padding: 25,
     marginBottom: 15,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: colors.glass.border,
+    ...shadows.lg,
     position: 'relative',
   },
   popularPlan: {
     borderWidth: 2,
-    borderColor: '#1976D2',
-    backgroundColor: '#F0F8FF',
+    borderColor: colors.primary,
+    backgroundColor: colors.glass.background,
   },
   popularBadge: {
-    backgroundColor: '#1976D2',
+    backgroundColor: colors.primary,
     paddingHorizontal: 15,
     paddingVertical: 5,
     borderRadius: 20,
@@ -332,30 +326,38 @@ const styles = StyleSheet.create({
     top: -12,
   },
   popularText: {
-    color: '#FFF',
+    color: colors.text.primary,
     fontSize: 12,
     fontWeight: 'bold',
     letterSpacing: 1,
   },
   planName: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: '#333',
+    ...typography.h3,
     marginTop: 10,
   },
   planPrice: {
     fontSize: 36,
     fontWeight: 'bold',
-    color: '#1976D2',
+    color: colors.primary,
     marginTop: 5,
   },
   trialText: {
-    fontSize: 14,
-    color: '#666',
+    ...typography.caption,
     marginTop: 5,
   },
   purchaseButton: {
-    backgroundColor: '#1976D2',
+    paddingVertical: 15,
+    paddingHorizontal: 40,
+    borderRadius: 25,
+    marginTop: 20,
+    minWidth: 200,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lifetimeButton: {
+    backgroundColor: colors.glass.background,
+    borderWidth: 2,
+    borderColor: colors.primary,
     paddingVertical: 15,
     paddingHorizontal: 40,
     borderRadius: 25,
@@ -363,24 +365,18 @@ const styles = StyleSheet.create({
     minWidth: 200,
     alignItems: 'center',
   },
-  lifetimeButton: {
-    backgroundColor: '#FFF',
-    borderWidth: 2,
-    borderColor: '#1976D2',
-  },
   buttonText: {
-    color: '#FFF',
+    color: colors.text.primary,
     fontSize: 16,
     fontWeight: '600',
   },
   disclaimer: {
-    fontSize: 12,
-    color: '#999',
+    ...typography.small,
     marginTop: 10,
   },
   restoreText: {
     textAlign: 'center',
-    color: '#1976D2',
+    color: colors.primary,
     fontSize: 16,
     marginTop: 10,
     fontWeight: '600',
@@ -392,11 +388,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   linkText: {
-    color: '#1976D2',
+    color: colors.primary,
     fontSize: 14,
   },
   separator: {
-    color: '#999',
+    color: colors.text.tertiary,
     marginHorizontal: 10,
     fontSize: 14,
   },
@@ -406,12 +402,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 20,
     padding: 15,
-    backgroundColor: '#FFF3E0',
+    backgroundColor: colors.glass.background,
     borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.warning,
   },
   mockNoticeText: {
     fontSize: 12,
-    color: '#F57C00',
+    color: colors.warning,
     marginLeft: 10,
     flex: 1,
   },

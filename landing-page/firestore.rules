@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Visitors collection - allow anyone to write (for tracking), only admin to read
+    match /visitors/{visitorId} {
+      allow create: if true; // Anyone can add visitor tracking
+      allow read, update, delete: if request.auth != null; // Only authenticated admin can read
+    }
+
+    // Waitlist collection - allow anyone to write, only admin to read
+    match /waitlist/{emailId} {
+      allow create: if true; // Anyone can signup
+      allow read, update, delete: if request.auth != null; // Only authenticated admin can read
+    }
+
+    // Admin settings collection - only authenticated users
+    match /admin/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

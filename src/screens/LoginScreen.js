@@ -8,10 +8,13 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator
+  ActivityIndicator,
+  Image
 } from 'react-native';
 import { FontAwesome5 as Icon } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
+import { colors, shadows, typography } from '../theme/colors';
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -102,126 +105,165 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
+    <LinearGradient
+      colors={[colors.background, colors.backgroundLight]}
+      style={styles.gradient}
     >
-      <View style={styles.content}>
-        <Text style={styles.title}>Spensely</Text>
-        <Text style={styles.subtitle}>Smart spending insights</Text>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+      >
+        <View style={styles.content}>
+          <View style={styles.logoContainer}>
+            <Image
+              source={require('../../public/newicon.png')}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+          </View>
+          <Text style={styles.title}>Penny</Text>
+          <Text style={styles.subtitle}>Smart spending insights</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-          editable={!loading}
-        />
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor={colors.text.tertiary}
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            editable={!loading}
+          />
 
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          editable={!loading}
-        />
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            placeholderTextColor={colors.text.tertiary}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            editable={!loading}
+          />
 
-        <TouchableOpacity
-          style={[styles.button, loading && styles.buttonDisabled]}
-          onPress={handleLogin}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Login</Text>
-          )}
-        </TouchableOpacity>
-
-        {showBiometric && (
           <TouchableOpacity
-            style={styles.biometricButton}
-            onPress={handleBiometricLogin}
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={handleLogin}
             disabled={loading}
           >
-            <Icon name="fingerprint" size={32} color="#6C63FF" solid />
-            <Text style={styles.biometricText}>
-              {Platform.OS === 'ios' ? 'Login with Face ID' : 'Login with Biometrics'}
+            <LinearGradient
+              colors={loading ? [colors.glass.background, colors.glass.background] : colors.primaryGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.buttonGradient}
+            >
+              {loading ? (
+                <ActivityIndicator color={colors.text.primary} />
+              ) : (
+                <Text style={styles.buttonText}>Login</Text>
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
+
+          {showBiometric && (
+            <TouchableOpacity
+              style={styles.biometricButton}
+              onPress={handleBiometricLogin}
+              disabled={loading}
+            >
+              <Icon name="fingerprint" size={32} color={colors.primary} solid />
+              <Text style={styles.biometricText}>
+                {Platform.OS === 'ios' ? 'Login with Face ID' : 'Login with Biometrics'}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity
+            onPress={handleForgotPassword}
+            disabled={loading}
+            style={styles.forgotPasswordButton}
+          >
+            <Text style={styles.forgotPasswordText}>
+              Forgot Password?
             </Text>
           </TouchableOpacity>
-        )}
 
-        <TouchableOpacity
-          onPress={handleForgotPassword}
-          disabled={loading}
-          style={styles.forgotPasswordButton}
-        >
-          <Text style={styles.forgotPasswordText}>
-            Forgot Password?
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => navigation.navigate('Register')}
-          disabled={loading}
-        >
-          <Text style={styles.linkText}>
-            Don't have an account? Register
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('Register')}
+            disabled={loading}
+          >
+            <Text style={styles.linkText}>
+              Don't have an account? Register
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
+  gradient: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   content: {
     flex: 1,
     justifyContent: 'center',
     paddingHorizontal: 30,
   },
+  logoContainer: {
+    width: 100,
+    height: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  logoImage: {
+    width: '100%',
+    height: '100%',
+  },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#2196F3',
+    ...typography.h1,
     marginBottom: 10,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
+    ...typography.bodySecondary,
     marginBottom: 40,
     textAlign: 'center',
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.glass.background,
     paddingHorizontal: 15,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 12,
     marginBottom: 15,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: colors.glass.border,
+    color: colors.text.primary,
+    ...shadows.sm,
   },
   button: {
-    backgroundColor: '#2196F3',
-    paddingVertical: 15,
-    borderRadius: 8,
     marginTop: 10,
     marginBottom: 20,
+    borderRadius: 12,
+    overflow: 'hidden',
+    ...shadows.md,
+  },
+  buttonGradient: {
+    paddingVertical: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonDisabled: {
-    backgroundColor: '#90CAF9',
+    opacity: 0.6,
   },
   buttonText: {
-    color: '#fff',
+    color: colors.text.primary,
     textAlign: 'center',
     fontSize: 16,
     fontWeight: '600',
@@ -231,19 +273,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 15,
     marginBottom: 20,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#6C63FF',
-    backgroundColor: '#F5F4FF',
+    borderColor: colors.primary,
+    backgroundColor: colors.glass.background,
+    ...shadows.sm,
   },
   biometricText: {
-    color: '#6C63FF',
+    color: colors.primary,
     fontSize: 14,
     fontWeight: '600',
     marginTop: 8,
   },
   linkText: {
-    color: '#2196F3',
+    color: colors.primary,
     textAlign: 'center',
     fontSize: 14,
   },
@@ -251,7 +294,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   forgotPasswordText: {
-    color: '#666',
+    color: colors.text.secondary,
     textAlign: 'center',
     fontSize: 14,
     textDecorationLine: 'underline',

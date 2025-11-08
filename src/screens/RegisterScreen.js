@@ -62,7 +62,7 @@ const RegisterScreen = ({ navigation }) => {
     >
       <View style={styles.content}>
         <Text style={styles.title}>Create Account</Text>
-        <Text style={styles.subtitle}>Join Spensely</Text>
+        <Text style={styles.subtitle}>Join Penny</Text>
 
         <TextInput
           style={styles.input}

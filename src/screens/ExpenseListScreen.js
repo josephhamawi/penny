@@ -7,13 +7,17 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
-  RefreshControl
+  RefreshControl,
+  Image
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { FontAwesome5 as Icon } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { useAuth } from '../contexts/AuthContext';
 import { subscribeToExpenses } from '../services/expenseService';
 import { exportToExcel } from '../utils/csvExport';
 import { importFromGoogleSheets } from '../services/googleSheetsService';
+import { colors, shadows, typography } from '../theme/colors';
 
 const ExpenseListScreen = ({ navigation }) => {
   const [expenses, setExpenses] = useState([]);
@@ -168,24 +172,38 @@ const ExpenseListScreen = ({ navigation }) => {
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#2196F3" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <View style={styles.topBar}>
-        <View>
-          <Text style={styles.topBarTitle}>Spensely</Text>
-          <Text style={styles.topBarEmail}>
-            {user?.displayName || user?.email?.split('@')[0] || 'User'}
-          </Text>
+      <LinearGradient
+        colors={colors.primaryGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.topBar}
+      >
+        <View style={styles.topBarLeft}>
+          <View style={styles.logoContainer}>
+            <Image
+              source={require('../../public/newicon.png')}
+              style={styles.logoImageExpense}
+              resizeMode="contain"
+            />
+          </View>
+          <View style={styles.topBarTextContainer}>
+            <Text style={styles.topBarTitle}>Penny</Text>
+            <Text style={styles.topBarEmail}>
+              {user?.displayName || user?.email?.split('@')[0] || 'User'}
+            </Text>
+          </View>
         </View>
         <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
-      </View>
+      </LinearGradient>
 
       <View style={styles.tableContainer}>
         {renderHeader()}
@@ -240,7 +258,7 @@ const ExpenseListScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.backgroundLight,
   },
   centerContainer: {
     flex: 1,
@@ -248,24 +266,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   topBar: {
-    backgroundColor: '#fff',
     paddingHorizontal: 20,
     paddingVertical: 15,
     paddingTop: 50,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+  },
+  topBarLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logoContainer: {
+    width: 55,
+    height: 55,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  logoImageExpense: {
+    width: '100%',
+    height: '100%',
+  },
+  topBarTextContainer: {
+    justifyContent: 'center',
   },
   topBarTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: colors.text.primary,
   },
   topBarEmail: {
     fontSize: 12,
-    color: '#666',
+    color: colors.text.secondary,
     marginTop: 2,
   },
   logoutButton: {
@@ -273,25 +306,27 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   logoutText: {
-    color: '#f44336',
+    color: colors.error,
     fontSize: 14,
     fontWeight: '600',
   },
   tableContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.backgroundCard,
     margin: 10,
-    borderRadius: 8,
+    borderRadius: 12,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.glass.border,
   },
   headerRow: {
     flexDirection: 'row',
-    backgroundColor: '#2196F3',
+    backgroundColor: colors.primary,
     paddingVertical: 12,
     paddingHorizontal: 5,
   },
   headerCell: {
-    color: '#fff',
+    color: colors.text.primary,
     fontWeight: '600',
     fontSize: 11,
   },
@@ -300,11 +335,11 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 5,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: colors.glass.borderLight,
   },
   cell: {
     fontSize: 11,
-    color: '#333',
+    color: colors.text.primary,
   },
   refCell: {
     width: '10%',
@@ -323,16 +358,16 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   inAmount: {
-    color: '#4CAF50',
+    color: colors.income,
     fontWeight: '600',
   },
   outAmount: {
-    color: '#f44336',
+    color: colors.expense,
     fontWeight: '600',
   },
   balanceAmount: {
     fontWeight: '700',
-    color: '#2196F3',
+    color: colors.primary,
   },
   emptyContainer: {
     flex: 1,
@@ -345,46 +380,46 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 18,
-    color: '#999',
+    color: colors.text.tertiary,
     marginBottom: 5,
   },
   emptySubtext: {
     fontSize: 14,
-    color: '#bbb',
+    color: colors.text.disabled,
   },
   bottomBar: {
     flexDirection: 'row',
     padding: 10,
     gap: 8,
-    backgroundColor: '#fff',
+    backgroundColor: colors.backgroundCard,
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
+    borderTopColor: colors.glass.border,
   },
   actionButton: {
     flex: 0.7,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.glass.background,
     paddingVertical: 15,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: colors.glass.borderLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
   actionButtonText: {
-    color: '#666',
+    color: colors.text.secondary,
     fontSize: 14,
     fontWeight: '600',
   },
   addButton: {
     flex: 1,
-    backgroundColor: '#2196F3',
+    backgroundColor: colors.primary,
     paddingVertical: 15,
-    borderRadius: 8,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   addButtonText: {
-    color: '#fff',
+    color: colors.background,
     fontSize: 16,
     fontWeight: '600',
   },

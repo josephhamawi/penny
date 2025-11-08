@@ -9,6 +9,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { FontAwesome5 as Icon } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { colors, shadows, typography } from '../theme/colors';
 
 // Mock goal data - will be replaced with real data from Firestore
 const MOCK_GOAL = {
@@ -111,15 +113,20 @@ const GoalDetailScreen = ({ navigation, route }) => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.header}>
+      <LinearGradient
+        colors={colors.primaryGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.header}
+      >
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="chevron-left" size={24} color="#1976D2" />
+          <Icon name="chevron-left" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Goal Details</Text>
         <TouchableOpacity onPress={() => navigation.navigate('CreateGoal', { goal })}>
-          <Icon name="edit" size={20} color="#1976D2" />
+          <Icon name="edit" size={20} color={colors.text.primary} />
         </TouchableOpacity>
-      </View>
+      </LinearGradient>
 
       <ScrollView style={styles.content}>
         {/* Goal Summary Card */}
@@ -159,18 +166,18 @@ const GoalDetailScreen = ({ navigation, route }) => {
           {/* Stats */}
           <View style={styles.statsRow}>
             <View style={styles.stat}>
-              <Icon name="calendar" size={16} color="#666" />
+              <Icon name="calendar" size={16} color={colors.text.secondary} />
               <Text style={styles.statText}>{daysRemaining} days left</Text>
             </View>
             <View style={styles.stat}>
-              <Icon name="piggy-bank" size={16} color="#666" />
+              <Icon name="piggy-bank" size={16} color={colors.text.secondary} />
               <Text style={styles.statText}>${dailySavingsNeeded.toFixed(2)}/day</Text>
             </View>
           </View>
 
           {/* Success Probability */}
           <View style={styles.probabilityCard}>
-            <Icon name="chart-line" size={20} color="#1976D2" />
+            <Icon name="chart-line" size={20} color={colors.primary} />
             <Text style={styles.probabilityTitle}>Success Probability</Text>
             <Text style={styles.probabilityValue}>{goal.successProbability}%</Text>
           </View>
@@ -179,7 +186,7 @@ const GoalDetailScreen = ({ navigation, route }) => {
         {/* AI Recommendations Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Icon name="brain" size={20} color="#1976D2" />
+            <Icon name="brain" size={20} color={colors.primary} />
             <Text style={styles.sectionTitle}>AI Recommendations</Text>
           </View>
 
@@ -204,7 +211,7 @@ const GoalDetailScreen = ({ navigation, route }) => {
             </View>
           ) : (
             <View style={styles.noRecommendations}>
-              <Icon name="lightbulb" size={40} color="#CCC" />
+              <Icon name="lightbulb" size={40} color={colors.text.disabled} />
               <Text style={styles.noRecommendationsText}>
                 No recommendations yet. Get AI-powered tips to reach your goal faster!
               </Text>
@@ -220,10 +227,10 @@ const GoalDetailScreen = ({ navigation, route }) => {
             disabled={generatingRecommendations}
           >
             {generatingRecommendations ? (
-              <ActivityIndicator color="#FFF" />
+              <ActivityIndicator color={colors.text.primary} />
             ) : (
               <>
-                <Icon name="magic" size={16} color="#FFF" />
+                <Icon name="magic" size={16} color={colors.text.primary} />
                 <Text style={styles.generateButtonText}>
                   {goal.aiRecommendations && !isRecommendationExpired
                     ? 'Regenerate Recommendations'
@@ -253,7 +260,7 @@ const GoalDetailScreen = ({ navigation, route }) => {
           style={styles.deleteButton}
           onPress={handleDeleteGoal}
         >
-          <Icon name="trash" size={16} color="#F44336" />
+          <Icon name="trash" size={16} color={colors.expense} />
           <Text style={styles.deleteButtonText}>Delete Goal</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -264,7 +271,7 @@ const GoalDetailScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F6FA',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -273,31 +280,25 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 20,
     paddingHorizontal: 20,
-    backgroundColor: '#FFF',
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333',
+    ...typography.h3,
+    color: colors.text.primary,
   },
   content: {
     flex: 1,
   },
   summaryCard: {
-    backgroundColor: '#FFF',
+    backgroundColor: colors.glass.background,
     margin: 20,
     padding: 25,
     borderRadius: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: colors.glass.border,
+    ...shadows.lg,
   },
   goalName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+    ...typography.h2,
     textAlign: 'center',
     marginBottom: 20,
   },
@@ -308,11 +309,10 @@ const styles = StyleSheet.create({
   percentageText: {
     fontSize: 48,
     fontWeight: 'bold',
-    color: '#1976D2',
+    color: colors.primary,
   },
   percentageLabel: {
-    fontSize: 14,
-    color: '#666',
+    ...typography.caption,
   },
   amountRow: {
     flexDirection: 'row',
@@ -323,27 +323,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   amountLabel: {
-    fontSize: 14,
-    color: '#666',
+    ...typography.caption,
     marginBottom: 5,
   },
   amountValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+    ...typography.h2,
   },
   progressBarContainer: {
     marginBottom: 20,
   },
   progressBarBg: {
     height: 10,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: colors.backgroundLight,
     borderRadius: 5,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#1976D2',
+    backgroundColor: colors.primary,
     borderRadius: 5,
   },
   statsRow: {
@@ -357,38 +354,34 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   statText: {
-    fontSize: 14,
-    color: '#666',
+    ...typography.caption,
   },
   probabilityCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E3F2FD',
+    backgroundColor: colors.backgroundLight,
     padding: 15,
     borderRadius: 10,
     gap: 10,
   },
   probabilityTitle: {
-    fontSize: 14,
-    color: '#666',
+    ...typography.caption,
     flex: 1,
   },
   probabilityValue: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#1976D2',
+    color: colors.primary,
   },
   section: {
-    backgroundColor: '#FFF',
+    backgroundColor: colors.glass.background,
     margin: 20,
     marginTop: 0,
     padding: 20,
     borderRadius: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: colors.glass.border,
+    ...shadows.md,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -397,20 +390,17 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    ...typography.h3,
   },
   recommendationsCard: {
-    backgroundColor: '#F5F9FF',
+    backgroundColor: colors.backgroundLight,
     padding: 15,
     borderRadius: 10,
     marginBottom: 15,
   },
   recommendationsText: {
-    fontSize: 15,
+    ...typography.body,
     lineHeight: 24,
-    color: '#333',
     marginBottom: 10,
   },
   recommendationFooter: {
@@ -419,12 +409,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   recommendationTime: {
-    fontSize: 12,
-    color: '#999',
+    ...typography.small,
   },
   expiredText: {
     fontSize: 12,
-    color: '#F44336',
+    color: colors.expense,
     fontWeight: '500',
   },
   noRecommendations: {
@@ -432,27 +421,27 @@ const styles = StyleSheet.create({
     paddingVertical: 30,
   },
   noRecommendationsText: {
-    fontSize: 14,
-    color: '#999',
+    ...typography.caption,
     textAlign: 'center',
     marginTop: 15,
     paddingHorizontal: 20,
   },
   generateButton: {
     flexDirection: 'row',
-    backgroundColor: '#1976D2',
+    backgroundColor: colors.primary,
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 10,
+    ...shadows.md,
   },
   buttonDisabled: {
     opacity: 0.5,
   },
   generateButtonText: {
-    color: '#FFF',
+    color: colors.text.primary,
     fontSize: 14,
     fontWeight: '600',
   },
@@ -462,14 +451,16 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   categoryTag: {
-    backgroundColor: '#E3F2FD',
+    backgroundColor: colors.backgroundLight,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 15,
+    borderWidth: 1,
+    borderColor: colors.primary,
   },
   categoryTagText: {
     fontSize: 14,
-    color: '#1976D2',
+    color: colors.primary,
   },
   deleteButton: {
     flexDirection: 'row',
@@ -481,10 +472,10 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#F44336',
+    borderColor: colors.expense,
   },
   deleteButtonText: {
-    color: '#F44336',
+    color: colors.expense,
     fontSize: 16,
     fontWeight: '600',
   },

@@ -3,6 +3,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import * as SecureStore from 'expo-secure-store';
 import { auth } from '../config/firebase';
 import { clearWebhookCache } from '../services/googleSheetsSyncService';
+import { initializeUserProfile } from '../services/invitationService';
 
 const AuthContext = createContext({});
 
@@ -37,6 +38,14 @@ export const AuthProvider = ({ children }) => {
         displayName: displayName
       });
     }
+    // Initialize user profile in Firestore for invitation system
+    if (result.user) {
+      await initializeUserProfile(
+        result.user.uid,
+        email,
+        displayName || email.split('@')[0]
+      );
+    }
     // Save credentials for biometric login
     await SecureStore.setItemAsync('userEmail', email);
     await SecureStore.setItemAsync('userPassword', password);
@@ -45,6 +54,14 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     const result = await auth.signInWithEmailAndPassword(email, password);
+    // Initialize user profile if it doesn't exist (for existing users)
+    if (result.user) {
+      await initializeUserProfile(
+        result.user.uid,
+        email,
+        result.user.displayName || email.split('@')[0]
+      );
+    }
     // Save credentials for biometric login
     await SecureStore.setItemAsync('userEmail', email);
     await SecureStore.setItemAsync('userPassword', password);

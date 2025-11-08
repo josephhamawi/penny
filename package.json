@@ -1,7 +1,7 @@
 {
-  "name": "spensely",
+  "name": "penny",
   "version": "1.0.0",
-  "description": "Spensely - Track your income and expenses with AI-powered insights",
+  "description": "Penny - Track your income and expenses with AI-powered insights",
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
@@ -26,6 +26,7 @@
     "expo-sharing": "~14.0.7",
     "expo-status-bar": "~3.0.8",
     "firebase": "^9.23.0",
+    "googleapis": "^165.0.0",
     "openai": "^6.8.1",
     "react": "19.1.0",
     "react-native": "0.81.5",

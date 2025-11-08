@@ -1,5 +1,6 @@
 import { db, auth } from '../config/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getUserDatabaseId } from './invitationService';
 
 // Cache key for webhook URL
 const WEBHOOK_CACHE_KEY = '@spensely:webhook_url';
@@ -10,17 +11,27 @@ const getUserWebhookDoc = (userId) => {
   return db.doc(`users/${userId}/settings/webhookUrl`);
 };
 
+// Helper to get database ID (shared or personal)
+const getDatabaseId = async () => {
+  const user = auth.currentUser;
+  if (!user) throw new Error('User not authenticated');
+  return await getUserDatabaseId(user.uid);
+};
+
 /**
  * Store the Google Sheets webhook URL
  * Saves to both Firestore (persistent) and AsyncStorage (cache)
+ * In shared databases, the webhook URL is shared across all members
  */
 export const saveWebhookUrl = async (url) => {
   try {
     const user = auth.currentUser;
     if (!user) throw new Error('User not authenticated');
 
+    const databaseId = await getDatabaseId();
+
     // Save to Firestore (primary storage)
-    await getUserWebhookDoc(user.uid).set({
+    await getUserWebhookDoc(databaseId).set({
       url: url,
       updatedAt: new Date()
     });
@@ -39,6 +50,7 @@ export const saveWebhookUrl = async (url) => {
 /**
  * Get the stored Google Sheets webhook URL
  * Checks cache first, falls back to Firestore if not found
+ * In shared databases, retrieves the shared webhook URL
  */
 export const getWebhookUrl = async (userId = null) => {
   try {
@@ -54,7 +66,8 @@ export const getWebhookUrl = async (userId = null) => {
 
     // Cache miss - load from Firestore
     console.log('[GoogleSheets] Cache miss - loading from database');
-    const doc = await getUserWebhookDoc(targetUserId).get();
+    const databaseId = await getUserDatabaseId(targetUserId);
+    const doc = await getUserWebhookDoc(databaseId).get();
     if (doc.exists) {
       const url = doc.data().url || null;
 
@@ -76,14 +89,17 @@ export const getWebhookUrl = async (userId = null) => {
 /**
  * Remove the stored webhook URL
  * Clears both Firestore and AsyncStorage cache
+ * In shared databases, clears the shared webhook URL
  */
 export const clearWebhookUrl = async () => {
   try {
     const user = auth.currentUser;
     if (!user) throw new Error('User not authenticated');
 
+    const databaseId = await getDatabaseId();
+
     // Delete from Firestore (primary storage)
-    await getUserWebhookDoc(user.uid).delete();
+    await getUserWebhookDoc(databaseId).delete();
 
     // Clear cache
     await AsyncStorage.removeItem(WEBHOOK_CACHE_KEY);

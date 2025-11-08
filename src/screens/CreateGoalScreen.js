@@ -10,8 +10,10 @@ import {
   Platform,
 } from 'react-native';
 import { FontAwesome5 as Icon } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { CATEGORIES } from '../config/categories';
+import { colors, shadows, typography } from '../theme/colors';
 
 const CreateGoalScreen = ({ navigation, route }) => {
   const { goal } = route.params || {}; // If editing existing goal
@@ -94,13 +96,18 @@ const CreateGoalScreen = ({ navigation, route }) => {
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.header}>
+      <LinearGradient
+        colors={colors.primaryGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.header}
+      >
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="chevron-left" size={24} color="#1976D2" />
+          <Icon name="chevron-left" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{isEditing ? 'Edit Goal' : 'Create Goal'}</Text>
         <View style={{ width: 24 }} />
-      </View>
+      </LinearGradient>
 
       <View style={styles.form}>
         {/* Goal Name */}
@@ -111,7 +118,7 @@ const CreateGoalScreen = ({ navigation, route }) => {
             value={name}
             onChangeText={setName}
             placeholder="e.g., Save for vacation"
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.text.tertiary}
           />
         </View>
 
@@ -126,7 +133,7 @@ const CreateGoalScreen = ({ navigation, route }) => {
               onChangeText={setTargetAmount}
               placeholder="1500"
               keyboardType="decimal-pad"
-              placeholderTextColor="#999"
+              placeholderTextColor={colors.text.tertiary}
             />
           </View>
         </View>
@@ -138,7 +145,7 @@ const CreateGoalScreen = ({ navigation, route }) => {
             style={styles.dateButton}
             onPress={() => setShowDatePicker(true)}
           >
-            <Icon name="calendar" size={20} color="#1976D2" />
+            <Icon name="calendar" size={20} color={colors.primary} />
             <Text style={styles.dateText}>
               {targetDate.toLocaleDateString('en-US', {
                 month: 'short',
@@ -211,7 +218,7 @@ const CreateGoalScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F6FA',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -220,12 +227,10 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 20,
     paddingHorizontal: 20,
-    backgroundColor: '#FFF',
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333',
+    ...typography.h3,
+    color: colors.text.primary,
   },
   form: {
     padding: 20,
@@ -234,53 +239,52 @@ const styles = StyleSheet.create({
     marginBottom: 25,
   },
   label: {
-    fontSize: 16,
+    ...typography.body,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 8,
   },
   hint: {
-    fontSize: 13,
-    color: '#666',
+    ...typography.caption,
     marginBottom: 10,
   },
   input: {
-    backgroundColor: '#FFF',
+    backgroundColor: colors.glass.background,
     paddingHorizontal: 15,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 12,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: colors.glass.border,
+    color: colors.text.primary,
+    ...shadows.sm,
   },
   amountInput: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF',
-    borderRadius: 8,
+    backgroundColor: colors.glass.background,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: colors.glass.border,
     paddingHorizontal: 15,
+    ...shadows.sm,
   },
   currencySymbol: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    ...typography.h3,
     marginRight: 5,
   },
   dateButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF',
+    backgroundColor: colors.glass.background,
     paddingHorizontal: 15,
     paddingVertical: 15,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: colors.glass.border,
+    ...shadows.sm,
   },
   dateText: {
-    fontSize: 16,
-    color: '#333',
+    ...typography.body,
     marginLeft: 10,
   },
   categoryGrid: {
@@ -292,34 +296,34 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.glass.background,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: colors.glass.border,
   },
   categoryChipSelected: {
-    backgroundColor: '#1976D2',
-    borderColor: '#1976D2',
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   categoryChipText: {
-    fontSize: 14,
-    color: '#333',
+    ...typography.caption,
   },
   categoryChipTextSelected: {
-    color: '#FFF',
+    color: colors.text.primary,
     fontWeight: '600',
   },
   saveButton: {
-    backgroundColor: '#1976D2',
+    backgroundColor: colors.primary,
     paddingVertical: 15,
     borderRadius: 25,
     alignItems: 'center',
     marginTop: 20,
+    ...shadows.md,
   },
   buttonDisabled: {
     opacity: 0.5,
   },
   saveButtonText: {
-    color: '#FFF',
+    color: colors.text.primary,
     fontSize: 16,
     fontWeight: '600',
   },

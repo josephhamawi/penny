@@ -12,6 +12,7 @@ import {
   Image
 } from 'react-native';
 import { FontAwesome5 as Icon } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import Toast from 'react-native-toast-message';
 import { useAuth } from '../contexts/AuthContext';
@@ -25,7 +26,11 @@ import {
   getMonthlyBudget,
   resetMonthlyBudget
 } from '../services/budgetService';
+import { importFromGoogleSheets } from '../services/googleSheetsService';
+import { manualSyncToSheets } from '../services/expenseService';
+import { getUserDatabaseId } from '../services/invitationService';
 import { formatCurrency } from '../utils/formatNumber';
+import { colors, shadows, typography } from '../theme/colors';
 
 const SettingsScreen = ({ navigation }) => {
   const [webhookUrl, setWebhookUrl] = useState('');
@@ -39,6 +44,7 @@ const SettingsScreen = ({ navigation }) => {
   const [monthlyBudget, setMonthlyBudget] = useState('');
   const [editingBudget, setEditingBudget] = useState(false);
   const [savingBudget, setSavingBudget] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const { user, logout, updateUserProfile } = useAuth();
 
   useEffect(() => {
@@ -215,7 +221,7 @@ const SettingsScreen = ({ navigation }) => {
       Toast.show({
         type: 'error',
         text1: 'Invalid URL',
-        text2: 'Please enter a valid webhook URL',
+        text2: 'Please enter a valid Google Sheets URL',
         position: 'bottom',
       });
       return;
@@ -223,20 +229,37 @@ const SettingsScreen = ({ navigation }) => {
 
     setSaving(true);
     try {
+      // Save the URL first
       await saveWebhookUrl(webhookUrl.trim());
+
+      // Immediately import data from the sheet
+      Toast.show({
+        type: 'info',
+        text1: 'Importing...',
+        text2: 'Fetching data from Google Sheets',
+        position: 'bottom',
+        autoHide: false,
+      });
+
+      const count = await importFromGoogleSheets(webhookUrl.trim(), user.uid);
+
       setEditingWebhook(false);
+      Toast.hide();
       Toast.show({
         type: 'success',
-        text1: 'Success',
-        text2: 'Google Sheets sync configured successfully',
+        text1: 'Import Successful',
+        text2: `Imported ${count} expense${count !== 1 ? 's' : ''} from Google Sheets`,
         position: 'bottom',
       });
     } catch (error) {
+      console.error('Google Sheets sync error:', error);
+      Toast.hide();
       Toast.show({
         type: 'error',
-        text1: 'Error',
-        text2: 'Failed to save webhook URL',
+        text1: 'Sync Error',
+        text2: error.message || 'Failed to import from Google Sheets. Check the URL and permissions.',
         position: 'bottom',
+        visibilityTime: 4000,
       });
     } finally {
       setSaving(false);
@@ -274,6 +297,96 @@ const SettingsScreen = ({ navigation }) => {
         }
       ]
     );
+  };
+
+  const handleManualSync = async () => {
+    if (!webhookUrl || !webhookUrl.trim()) {
+      Toast.show({
+        type: 'error',
+        text1: 'No URL Configured',
+        text2: 'Please set up Google Sheets URL first',
+        position: 'bottom',
+      });
+      return;
+    }
+
+    setSyncing(true);
+
+    try {
+      const databaseId = await getUserDatabaseId(user.uid);
+      const url = webhookUrl.trim();
+
+      // Check if it's a Google Sheets document URL (for import)
+      const isSheetUrl = url.includes('docs.google.com/spreadsheets');
+      const isWebhookUrl = url.includes('script.google.com/macros');
+
+      // Step 1: Import from Google Sheets (if it's a sheet URL)
+      if (isSheetUrl) {
+        Toast.show({
+          type: 'info',
+          text1: 'Importing...',
+          text2: 'Fetching data from Google Sheets',
+          position: 'bottom',
+          autoHide: false,
+        });
+
+        const count = await importFromGoogleSheets(url, databaseId);
+
+        Toast.hide();
+        Toast.show({
+          type: 'success',
+          text1: 'Import Complete!',
+          text2: `Imported ${count} expense${count !== 1 ? 's' : ''}`,
+          position: 'bottom',
+          visibilityTime: 2000,
+        });
+
+        // Wait a moment before exporting
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+
+      // Step 2: Export to Google Sheets (if it's a webhook URL)
+      if (isWebhookUrl) {
+        Toast.show({
+          type: 'info',
+          text1: 'Exporting...',
+          text2: 'Pushing all expenses to Google Sheets',
+          position: 'bottom',
+          autoHide: false,
+        });
+
+        await manualSyncToSheets(databaseId);
+
+        Toast.hide();
+        Toast.show({
+          type: 'success',
+          text1: 'Export Complete!',
+          text2: 'All expenses synced to Google Sheets',
+          position: 'bottom',
+        });
+      } else if (!isSheetUrl) {
+        // Neither format recognized
+        Toast.hide();
+        Toast.show({
+          type: 'error',
+          text1: 'Invalid URL',
+          text2: 'Please use a Google Sheets or webhook URL',
+          position: 'bottom',
+        });
+      }
+    } catch (error) {
+      console.error('Manual sync error:', error);
+      Toast.hide();
+      Toast.show({
+        type: 'error',
+        text1: 'Sync Failed',
+        text2: error.message || 'Failed to sync. Check URL configuration.',
+        position: 'bottom',
+        visibilityTime: 4000,
+      });
+    } finally {
+      setSyncing(false);
+    }
   };
 
   const handleViewInstructions = () => {
@@ -316,22 +429,27 @@ const SettingsScreen = ({ navigation }) => {
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#6C63FF" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <View style={styles.header}>
+      {/* Header with Gradient */}
+      <LinearGradient
+        colors={colors.primaryGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Icon name="chevron-left" size={24} color="#FFF" />
+          <Icon name="chevron-left" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{editingName ? 'Edit Profile' : 'Profile'}</Text>
         {!editingName && (
           <TouchableOpacity style={styles.editButton} onPress={() => setEditingName(true)}>
-            <Icon name="pen" size={16} color="#1976D2" />
+            <Icon name="pen" size={16} color={colors.primary} />
           </TouchableOpacity>
         )}
         {editingName && (
@@ -341,13 +459,13 @@ const SettingsScreen = ({ navigation }) => {
             disabled={updatingProfile}
           >
             {updatingProfile ? (
-              <ActivityIndicator color="#1976D2" size="small" />
+              <ActivityIndicator color={colors.primary} size="small" />
             ) : (
               <Text style={styles.updateButtonText}>Update</Text>
             )}
           </TouchableOpacity>
         )}
-      </View>
+      </LinearGradient>
 
       {/* Profile Section */}
       <View style={styles.profileSection}>
@@ -360,12 +478,12 @@ const SettingsScreen = ({ navigation }) => {
             <Image source={{ uri: photoURL }} style={styles.avatarImage} />
           ) : (
             <View style={styles.avatar}>
-              <Icon name="user" size={40} color="#1976D2" />
+              <Icon name="user" size={40} color={colors.primary} />
             </View>
           )}
           {editingName && (
             <View style={styles.cameraIcon}>
-              <Icon name="camera" size={14} color="#FFF" />
+              <Icon name="camera" size={14} color={colors.text.primary} />
             </View>
           )}
         </TouchableOpacity>
@@ -404,7 +522,7 @@ const SettingsScreen = ({ navigation }) => {
                 disabled={updatingProfile}
               >
                 {updatingProfile ? (
-                  <ActivityIndicator color="#fff" size="small" />
+                  <ActivityIndicator color={colors.text.primary} size="small" />
                 ) : (
                   <Text style={styles.saveButtonText}>Save</Text>
                 )}
@@ -429,15 +547,15 @@ const SettingsScreen = ({ navigation }) => {
           onPress={() => setEditingBudget(!editingBudget)}
         >
           <View style={styles.menuItemLeft}>
-            <View style={[styles.menuIcon, { backgroundColor: '#E3F2FD' }]}>
-              <Icon name="wallet" size={20} color="#1976D2" />
+            <View style={[styles.menuIcon, { backgroundColor: colors.glass.background }]}>
+              <Icon name="wallet" size={20} color={colors.primary} />
             </View>
             <Text style={styles.menuItemText}>Monthly Budget</Text>
           </View>
           {editingBudget ? (
-            <Icon name="chevron-down" size={18} color="#999" />
+            <Icon name="chevron-down" size={18} color={colors.text.tertiary} />
           ) : (
-            <Icon name="chevron-right" size={18} color="#999" />
+            <Icon name="chevron-right" size={18} color={colors.text.tertiary} />
           )}
         </TouchableOpacity>
 
@@ -460,7 +578,7 @@ const SettingsScreen = ({ navigation }) => {
                 disabled={savingBudget}
               >
                 {savingBudget ? (
-                  <ActivityIndicator color="#fff" size="small" />
+                  <ActivityIndicator color={colors.text.primary} size="small" />
                 ) : (
                   <Text style={styles.buttonText}>Save</Text>
                 )}
@@ -470,7 +588,7 @@ const SettingsScreen = ({ navigation }) => {
                 onPress={handleResetBudget}
                 disabled={savingBudget}
               >
-                <Text style={[styles.buttonText, { color: '#FF9800' }]}>Reset</Text>
+                <Text style={[styles.buttonText, { color: colors.warning }]}>Reset</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -482,25 +600,32 @@ const SettingsScreen = ({ navigation }) => {
           onPress={() => setEditingWebhook(!editingWebhook)}
         >
           <View style={styles.menuItemLeft}>
-            <View style={[styles.menuIcon, { backgroundColor: '#E8F5E9' }]}>
-              <Icon name="file-excel" size={20} color="#4CAF50" />
+            <View style={[styles.menuIcon, { backgroundColor: colors.glass.background }]}>
+              <Icon name="file-excel" size={20} color={colors.income} />
             </View>
             <Text style={styles.menuItemText}>Google Sheets Sync</Text>
           </View>
           {editingWebhook ? (
-            <Icon name="chevron-down" size={18} color="#999" />
+            <Icon name="chevron-down" size={18} color={colors.text.tertiary} />
           ) : (
-            <Icon name="chevron-right" size={18} color="#999" />
+            <Icon name="chevron-right" size={18} color={colors.text.tertiary} />
           )}
         </TouchableOpacity>
 
         {editingWebhook && (
           <View style={styles.expandedContent}>
+            <Text style={styles.formLabel}>
+              Enter your Google Sheets URL{'\n'}
+              <Text style={styles.helperText}>
+                Use the spreadsheet URL (for import) or the Apps Script webhook URL (for export)
+              </Text>
+            </Text>
             <TextInput
               style={styles.input}
               value={webhookUrl}
               onChangeText={setWebhookUrl}
-              placeholder="https://script.google.com/macros/s/..."
+              placeholder="https://docs.google.com/spreadsheets/d/..."
+              placeholderTextColor={colors.text.disabled}
               autoCapitalize="none"
               autoCorrect={false}
               multiline
@@ -512,9 +637,9 @@ const SettingsScreen = ({ navigation }) => {
                 disabled={saving}
               >
                 {saving ? (
-                  <ActivityIndicator color="#fff" size="small" />
+                  <ActivityIndicator color={colors.text.primary} size="small" />
                 ) : (
-                  <Text style={styles.buttonText}>Save</Text>
+                  <Text style={styles.buttonText}>Save & Import</Text>
                 )}
               </TouchableOpacity>
               {webhookUrl && (
@@ -523,18 +648,61 @@ const SettingsScreen = ({ navigation }) => {
                   onPress={handleClearWebhook}
                   disabled={saving}
                 >
-                  <Text style={[styles.buttonText, { color: '#F44336' }]}>Clear</Text>
+                  <Text style={[styles.buttonText, { color: colors.expense }]}>Clear</Text>
                 </TouchableOpacity>
               )}
             </View>
+
+            {/* Manual Sync Button */}
+            {webhookUrl && (
+              <TouchableOpacity
+                style={[styles.syncButton, syncing && styles.buttonDisabled]}
+                onPress={handleManualSync}
+                disabled={syncing}
+              >
+                <LinearGradient
+                  colors={colors.primaryGradient}
+                  style={styles.syncButtonGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
+                  {syncing ? (
+                    <ActivityIndicator color={colors.text.primary} size="small" />
+                  ) : (
+                    <>
+                      <Icon name="sync-alt" size={18} color={colors.text.primary} />
+                      <Text style={[styles.buttonText, { marginLeft: 8 }]}>
+                        Sync Bidirectionally
+                      </Text>
+                    </>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
               style={styles.linkButton}
               onPress={handleViewInstructions}
             >
-              <Text style={styles.linkText}>View Setup Instructions</Text>
+              <Text style={styles.linkText}>
+                Required columns: Date, Description, Category, In, Out
+              </Text>
             </TouchableOpacity>
           </View>
         )}
+
+        {/* Invitations & Sharing */}
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => navigation.navigate('Invitations')}
+        >
+          <View style={styles.menuItemLeft}>
+            <View style={[styles.menuIcon, { backgroundColor: colors.glass.background }]}>
+              <Icon name="users" size={20} color={colors.primary} />
+            </View>
+            <Text style={styles.menuItemText}>Invitations & Sharing</Text>
+          </View>
+          <Icon name="chevron-right" size={18} color={colors.text.tertiary} />
+        </TouchableOpacity>
 
         {/* Logout */}
         <TouchableOpacity
@@ -542,12 +710,12 @@ const SettingsScreen = ({ navigation }) => {
           onPress={handleLogout}
         >
           <View style={styles.menuItemLeft}>
-            <View style={[styles.menuIcon, { backgroundColor: '#FFEBEE' }]}>
-              <Icon name="sign-out-alt" size={20} color="#F44336" />
+            <View style={[styles.menuIcon, { backgroundColor: colors.glass.background }]}>
+              <Icon name="sign-out-alt" size={20} color={colors.expense} />
             </View>
-            <Text style={[styles.menuItemText, { color: '#F44336' }]}>Log out</Text>
+            <Text style={[styles.menuItemText, { color: colors.expense }]}>Log out</Text>
           </View>
-          <Icon name="chevron-right" size={18} color="#999" />
+          <Icon name="chevron-right" size={18} color={colors.text.tertiary} />
         </TouchableOpacity>
       </View>
 
@@ -559,16 +727,15 @@ const SettingsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F6FA',
+    backgroundColor: colors.background,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5F6FA',
+    backgroundColor: colors.background,
   },
   header: {
-    backgroundColor: '#1976D2',
     paddingTop: 50,
     paddingBottom: 15,
     paddingHorizontal: 20,
@@ -583,9 +750,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#FFF',
+    ...typography.h3,
     flex: 1,
     textAlign: 'center',
   },
@@ -593,30 +758,33 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.glass.background,
     justifyContent: 'center',
     alignItems: 'center',
+    ...shadows.sm,
   },
   updateButton: {
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.glass.background,
     justifyContent: 'center',
     alignItems: 'center',
+    ...shadows.sm,
   },
   updateButtonText: {
-    color: '#1976D2',
+    color: colors.primary,
     fontSize: 14,
     fontWeight: '600',
   },
   profileSection: {
-    backgroundColor: '#FFF',
+    backgroundColor: colors.glass.background,
     paddingTop: 30,
     paddingBottom: 20,
     alignItems: 'center',
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: colors.glass.borderLight,
+    ...shadows.md,
   },
   avatarContainer: {
     position: 'relative',
@@ -626,9 +794,11 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#E3F2FD',
+    backgroundColor: colors.glass.background,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.glass.border,
   },
   avatarImage: {
     width: 100,
@@ -642,21 +812,19 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: '#1976D2',
+    backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
-    borderColor: '#FFF',
+    borderColor: colors.glass.background,
+    ...shadows.sm,
   },
   profileName: {
-    fontSize: 22,
-    fontWeight: '600',
-    color: '#333',
+    ...typography.h2,
     marginBottom: 5,
   },
   profileEmail: {
-    fontSize: 14,
-    color: '#999',
+    ...typography.caption,
   },
   editForm: {
     width: '100%',
@@ -666,20 +834,26 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   formLabel: {
-    fontSize: 12,
-    color: '#999',
+    ...typography.small,
     marginBottom: 8,
   },
+  helperText: {
+    ...typography.small,
+    color: colors.text.tertiary,
+    fontSize: 11,
+    fontWeight: '400',
+  },
   formInput: {
-    backgroundColor: '#F5F6FA',
+    backgroundColor: colors.backgroundLight,
     paddingHorizontal: 15,
     paddingVertical: 12,
     borderRadius: 8,
-    fontSize: 15,
-    color: '#333',
+    ...typography.body,
+    borderWidth: 1,
+    borderColor: colors.glass.borderLight,
   },
   formInputDisabled: {
-    color: '#999',
+    color: colors.text.disabled,
   },
   formActions: {
     flexDirection: 'row',
@@ -691,30 +865,31 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   cancelButtonText: {
-    color: '#999',
+    color: colors.text.secondary,
     fontSize: 16,
   },
   saveButton: {
-    backgroundColor: '#00BFA6',
+    backgroundColor: colors.income,
     paddingHorizontal: 40,
     paddingVertical: 12,
     borderRadius: 25,
     minWidth: 120,
     alignItems: 'center',
+    ...shadows.md,
   },
   saveButtonText: {
-    color: '#FFF',
+    color: colors.text.primary,
     fontSize: 16,
     fontWeight: '600',
   },
   menuSection: {
-    backgroundColor: '#FFF',
+    backgroundColor: colors.glass.background,
     marginTop: 10,
     paddingVertical: 10,
+    ...shadows.md,
   },
   menuSectionTitle: {
-    fontSize: 13,
-    color: '#999',
+    ...typography.small,
     paddingHorizontal: 20,
     paddingVertical: 10,
     textTransform: 'uppercase',
@@ -727,7 +902,7 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#F5F5F5',
+    borderBottomColor: colors.glass.borderLight,
   },
   menuItemLeft: {
     flexDirection: 'row',
@@ -741,41 +916,41 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
+    ...shadows.sm,
   },
   menuItemText: {
-    fontSize: 16,
-    color: '#333',
+    ...typography.body,
   },
   expandedContent: {
     paddingHorizontal: 20,
     paddingBottom: 15,
-    backgroundColor: '#FAFAFA',
+    backgroundColor: colors.backgroundLight,
   },
   input: {
-    backgroundColor: '#FFF',
+    backgroundColor: colors.glass.background,
     paddingHorizontal: 15,
     paddingVertical: 12,
     borderRadius: 8,
-    fontSize: 14,
+    ...typography.caption,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: colors.glass.borderLight,
     minHeight: 60,
     marginTop: 10,
   },
   budgetInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF',
+    backgroundColor: colors.glass.background,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: colors.glass.borderLight,
     paddingHorizontal: 15,
     marginTop: 10,
   },
   currencySymbol: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: colors.text.primary,
     marginRight: 5,
   },
   budgetInput: {
@@ -783,7 +958,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
+    color: colors.text.primary,
   },
   buttonRow: {
     flexDirection: 'row',
@@ -796,20 +971,21 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    ...shadows.sm,
   },
   primaryButton: {
-    backgroundColor: '#1976D2',
+    backgroundColor: colors.primary,
   },
   secondaryButton: {
-    backgroundColor: '#FFF',
+    backgroundColor: colors.glass.background,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: colors.glass.borderLight,
   },
   buttonDisabled: {
     opacity: 0.5,
   },
   buttonText: {
-    color: '#fff',
+    color: colors.text.primary,
     fontSize: 14,
     fontWeight: '600',
   },
@@ -819,9 +995,22 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   linkText: {
-    color: '#1976D2',
+    color: colors.primary,
     fontSize: 14,
     textDecorationLine: 'underline',
+  },
+  syncButton: {
+    marginTop: 15,
+    borderRadius: 12,
+    overflow: 'hidden',
+    ...shadows.md,
+  },
+  syncButtonGradient: {
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

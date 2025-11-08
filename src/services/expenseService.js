@@ -1,22 +1,37 @@
 import firebase from 'firebase/compat/app';
 import { db, auth } from '../config/firebase';
 import { syncExpenseToSheets, batchSyncToSheets } from './googleSheetsSyncService';
+import { getUserDatabaseId } from './invitationService';
 
 // Helper to get user's expenses collection
+// Now supports shared databases - uses shared database ID if user is part of one
 const getUserExpensesCollection = (userId) => {
   if (!userId) throw new Error('User ID is required');
   return db.collection(`users/${userId}/expenses`);
 };
 
+// Helper to get database ID (shared or personal)
+const getDatabaseId = async () => {
+  const user = auth.currentUser;
+  if (!user) throw new Error('User not authenticated');
+  return await getUserDatabaseId(user.uid);
+};
+
 // Add a new expense record
-export const addExpense = async (expenseData) => {
+export const addExpense = async (expenseData, options = {}) => {
   try {
     const user = auth.currentUser;
     if (!user) throw new Error('User not authenticated');
 
-    const docRef = await getUserExpensesCollection(user.uid).add({
+    const databaseId = await getDatabaseId();
+
+    console.log('[addExpense] Received date:', expenseData.date, 'type:', typeof expenseData.date);
+    const dateObj = new Date(expenseData.date);
+    console.log('[addExpense] Date object:', dateObj, 'valid:', !isNaN(dateObj.getTime()));
+
+    const docRef = await getUserExpensesCollection(databaseId).add({
       userId: user.uid,
-      date: firebase.firestore.Timestamp.fromDate(new Date(expenseData.date)),
+      date: firebase.firestore.Timestamp.fromDate(dateObj),
       description: expenseData.description,
       category: expenseData.category,
       inAmount: parseFloat(expenseData.inAmount) || 0,
@@ -24,8 +39,10 @@ export const addExpense = async (expenseData) => {
       createdAt: firebase.firestore.Timestamp.now()
     });
 
-    // Sync all expenses to Google Sheets after adding
-    await syncAllExpensesToSheets(user.uid);
+    // Sync all expenses to Google Sheets after adding (unless skipSync is true)
+    if (!options.skipSync) {
+      await syncAllExpensesToSheets(databaseId);
+    }
 
     return docRef.id;
   } catch (error) {
@@ -35,51 +52,68 @@ export const addExpense = async (expenseData) => {
 };
 
 // Subscribe to real-time expense updates
+// userId parameter is resolved to shared database ID if user is in a shared database
 export const subscribeToExpenses = (userId, callback) => {
+  console.log('[ExpenseService] subscribeToExpenses called with userId:', userId);
   if (!userId) throw new Error('User ID is required');
 
-  return getUserExpensesCollection(userId)
-    .orderBy('date', 'asc')
-    .orderBy('createdAt', 'asc')
-    .onSnapshot((querySnapshot) => {
-      const expenses = [];
-      let balance = 0;
+  // Resolve to database ID (shared or personal)
+  let unsubscribe = null;
 
-      // Process expenses
-      const tempExpenses = [];
-      querySnapshot.forEach((doc) => {
-        tempExpenses.push({
-          id: doc.id,
-          ...doc.data(),
-          date: doc.data().date.toDate()
+  getUserDatabaseId(userId).then((databaseId) => {
+    console.log('[ExpenseService] Database ID resolved to:', databaseId);
+    unsubscribe = getUserExpensesCollection(databaseId)
+      .orderBy('date', 'asc')
+      .orderBy('createdAt', 'asc')
+      .onSnapshot((querySnapshot) => {
+        const expenses = [];
+        let balance = 0;
+
+        // Process expenses
+        const tempExpenses = [];
+        querySnapshot.forEach((doc) => {
+          tempExpenses.push({
+            id: doc.id,
+            ...doc.data(),
+            date: doc.data().date.toDate()
+          });
         });
+
+        // Sort by date (oldest first) for balance calculation and ref# assignment
+        // This ensures ref# 1 is the earliest expense, increasing chronologically
+        // If dates are equal, sort by createdAt timestamp
+        tempExpenses.sort((a, b) => {
+          const dateCompare = a.date - b.date;
+          if (dateCompare !== 0) return dateCompare;
+          // If dates are the same, sort by creation time
+          return a.createdAt.seconds - b.createdAt.seconds;
+        });
+
+        // Calculate balance and assign ref numbers
+        tempExpenses.forEach((expense, index) => {
+          expense.ref = index + 1; // Sequential ref# starting from 1 (earliest expense = ref# 1)
+          balance += expense.inAmount - expense.outAmount;
+          expense.balance = balance;
+          expenses.push(expense);
+        });
+
+        // Reverse to show newest first in the list
+        expenses.reverse();
+
+        console.log(`[ExpenseService] Loaded ${expenses.length} expenses from Firebase`);
+        callback(expenses);
+      }, (error) => {
+        console.error('Error subscribing to expenses:', error);
       });
+  }).catch((error) => {
+    console.error('Error resolving database ID:', error);
+    callback([]);
+  });
 
-      // Sort by date (oldest first) for balance calculation and ref# assignment
-      // This ensures ref# 1 is the earliest expense, increasing chronologically
-      // If dates are equal, sort by createdAt timestamp
-      tempExpenses.sort((a, b) => {
-        const dateCompare = a.date - b.date;
-        if (dateCompare !== 0) return dateCompare;
-        // If dates are the same, sort by creation time
-        return a.createdAt.seconds - b.createdAt.seconds;
-      });
-
-      // Calculate balance and assign ref numbers
-      tempExpenses.forEach((expense, index) => {
-        expense.ref = index + 1; // Sequential ref# starting from 1 (earliest expense = ref# 1)
-        balance += expense.inAmount - expense.outAmount;
-        expense.balance = balance;
-        expenses.push(expense);
-      });
-
-      // Reverse to show newest first in the list
-      expenses.reverse();
-
-      callback(expenses);
-    }, (error) => {
-      console.error('Error subscribing to expenses:', error);
-    });
+  // Return unsubscribe function
+  return () => {
+    if (unsubscribe) unsubscribe();
+  };
 };
 
 // Update an existing expense
@@ -88,7 +122,9 @@ export const updateExpense = async (expenseId, expenseData) => {
     const user = auth.currentUser;
     if (!user) throw new Error('User not authenticated');
 
-    await getUserExpensesCollection(user.uid).doc(expenseId).update({
+    const databaseId = await getDatabaseId();
+
+    await getUserExpensesCollection(databaseId).doc(expenseId).update({
       date: firebase.firestore.Timestamp.fromDate(new Date(expenseData.date)),
       description: expenseData.description,
       category: expenseData.category,
@@ -98,7 +134,7 @@ export const updateExpense = async (expenseId, expenseData) => {
     });
 
     // Sync all expenses to Google Sheets after updating
-    await syncAllExpensesToSheets(user.uid);
+    await syncAllExpensesToSheets(databaseId);
   } catch (error) {
     console.error('Error updating expense:', error);
     throw error;
@@ -111,10 +147,12 @@ export const deleteExpense = async (expenseId) => {
     const user = auth.currentUser;
     if (!user) throw new Error('User not authenticated');
 
-    await getUserExpensesCollection(user.uid).doc(expenseId).delete();
+    const databaseId = await getDatabaseId();
+
+    await getUserExpensesCollection(databaseId).doc(expenseId).delete();
 
     // Sync all expenses to Google Sheets after deleting
-    await syncAllExpensesToSheets(user.uid);
+    await syncAllExpensesToSheets(databaseId);
   } catch (error) {
     console.error('Error deleting expense:', error);
     throw error;
@@ -122,11 +160,14 @@ export const deleteExpense = async (expenseId) => {
 };
 
 // Get all expenses for export
+// userId parameter is resolved to shared database ID if user is in a shared database
 export const getAllExpenses = async (userId) => {
   try {
     if (!userId) throw new Error('User ID is required');
 
-    const querySnapshot = await getUserExpensesCollection(userId)
+    const databaseId = await getUserDatabaseId(userId);
+
+    const querySnapshot = await getUserExpensesCollection(databaseId)
       .orderBy('date', 'asc')
       .orderBy('createdAt', 'asc')
       .get();
@@ -185,4 +226,9 @@ const syncAllExpensesToSheets = async (userId) => {
     console.error('Error syncing to Google Sheets:', error);
     // Don't throw - we don't want to block the main operation if sync fails
   }
+};
+
+// Export manual sync function for Settings screen
+export const manualSyncToSheets = async (userId) => {
+  await syncAllExpensesToSheets(userId);
 };

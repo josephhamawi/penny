@@ -1,19 +1,19 @@
 {
   "expo": {
-    "name": "Spensely",
-    "slug": "spensely",
+    "name": "Penny",
+    "slug": "penny",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
-    "icon": "./assets/icon.png",
+    "icon": "./public/newicon.png",
     "adaptiveIcon": {
-      "foregroundImage": "./assets/adaptive-icon.png",
+      "foregroundImage": "./public/newicon.png",
       "backgroundColor": "#ffffff"
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./public/newicon.png",
       "meta": {
-        "name": "Spensely",
+        "name": "Penny",
         "description": "Track your income and expenses effortlessly with AI-powered insights",
         "themeColor": "#6C63FF"
       }
@@ -24,28 +24,28 @@
       "backgroundColor": "#2196F3"
     },
     "ios": {
-      "bundleIdentifier": "com.spensely.app",
+      "bundleIdentifier": "com.penny.app",
       "buildNumber": "1.0.0",
       "supportsTablet": true,
       "infoPlist": {
-        "CFBundleDisplayName": "Spensely",
-        "NSFaceIDUsageDescription": "Allow Spensely to use Face ID for secure and quick authentication.",
-        "NSPhotoLibraryUsageDescription": "Allow Spensely to access your photo library to set your profile picture."
+        "CFBundleDisplayName": "Penny",
+        "NSFaceIDUsageDescription": "Allow Penny to use Face ID for secure and quick authentication.",
+        "NSPhotoLibraryUsageDescription": "Allow Penny to access your photo library to set your profile picture."
       }
     },
     "android": {
-      "package": "com.spensely.app",
+      "package": "com.penny.app",
       "versionCode": 1,
       "permissions": [
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE"
       ],
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./public/newicon.png",
         "backgroundColor": "#ffffff"
       },
       "notification": {
-        "icon": "./assets/notification-icon.png",
+        "icon": "./public/newicon.png",
         "color": "#6C63FF"
       }
     },

@@ -77,6 +77,141 @@ const parseCSVLine = (line) => {
 };
 
 /**
+ * Parse date flexibly - handles any Excel/Google Sheets date format
+ * Strategies: Excel serial numbers, US/EU formats, ISO formats
+ * Never throws errors - falls back to current date
+ */
+const parseFlexibleDate = (dateValue) => {
+  // If no date provided, use current date
+  if (!dateValue || dateValue.toString().trim() === '') {
+    return new Date();
+  }
+
+  const dateStr = dateValue.toString().trim();
+
+  // Strategy 1: Try as Excel serial number (days since 1899-12-30)
+  const asNumber = parseFloat(dateStr);
+  if (!isNaN(asNumber) && asNumber > 0 && asNumber < 100000) {
+    try {
+      // Excel date serial number (e.g., 44927 = 2023-01-01)
+      const excelEpoch = new Date(1899, 11, 30);
+      const date = new Date(excelEpoch.getTime() + asNumber * 86400000);
+      if (!isNaN(date.getTime()) && date.getFullYear() > 1900 && date.getFullYear() < 2100) {
+        return date;
+      }
+    } catch (e) {
+      // Continue to next strategy
+    }
+  }
+
+  // Strategy 2: Try slash-separated formats (mm/dd/yyyy, dd/mm/yyyy, yyyy/mm/dd)
+  if (dateStr.includes('/')) {
+    try {
+      const parts = dateStr.split('/').map(p => parseInt(p, 10));
+      if (parts.length === 3 && parts.every(p => !isNaN(p))) {
+        let [a, b, c] = parts;
+
+        // Handle 2-digit year in any position
+        if (c < 100) {
+          c = c < 50 ? 2000 + c : 1900 + c;
+        }
+        if (a < 100 && a > 31) {
+          a = a < 50 ? 2000 + a : 1900 + a;
+        }
+
+        // Try mm/dd/yyyy (US format) - most common in Excel
+        if (a >= 1 && a <= 12 && b >= 1 && b <= 31) {
+          const usDate = new Date(c, a - 1, b);
+          if (!isNaN(usDate.getTime()) && usDate.getMonth() === a - 1) {
+            return usDate;
+          }
+        }
+
+        // Try dd/mm/yyyy (EU format)
+        if (b >= 1 && b <= 12 && a >= 1 && a <= 31) {
+          const euDate = new Date(c, b - 1, a);
+          if (!isNaN(euDate.getTime()) && euDate.getMonth() === b - 1) {
+            return euDate;
+          }
+        }
+
+        // Try yyyy/mm/dd (ISO-like)
+        if (a > 1000 && b >= 1 && b <= 12 && c >= 1 && c <= 31) {
+          const isoDate = new Date(a, b - 1, c);
+          if (!isNaN(isoDate.getTime()) && isoDate.getFullYear() === a) {
+            return isoDate;
+          }
+        }
+      }
+    } catch (e) {
+      // Continue to next strategy
+    }
+  }
+
+  // Strategy 3: Try dash-separated formats (yyyy-mm-dd, dd-mm-yyyy)
+  if (dateStr.includes('-')) {
+    try {
+      // Try ISO format first (yyyy-mm-dd)
+      const isoDate = new Date(dateStr);
+      if (!isNaN(isoDate.getTime()) && dateStr.match(/^\d{4}-\d{1,2}-\d{1,2}/)) {
+        return isoDate;
+      }
+
+      // Try parsing dash-separated values
+      const parts = dateStr.split('-').map(p => parseInt(p, 10));
+      if (parts.length === 3 && parts.every(p => !isNaN(p))) {
+        let [a, b, c] = parts;
+
+        if (a > 1000) {
+          // yyyy-mm-dd
+          const date = new Date(a, b - 1, c);
+          if (!isNaN(date.getTime())) return date;
+        } else if (c > 1000) {
+          // dd-mm-yyyy
+          const date = new Date(c, b - 1, a);
+          if (!isNaN(date.getTime())) return date;
+        }
+      }
+    } catch (e) {
+      // Continue to next strategy
+    }
+  }
+
+  // Strategy 4: Try dot-separated format (dd.mm.yyyy - common in Europe)
+  if (dateStr.includes('.')) {
+    try {
+      const parts = dateStr.split('.').map(p => parseInt(p, 10));
+      if (parts.length === 3 && parts.every(p => !isNaN(p))) {
+        let [day, month, year] = parts;
+        if (year < 100) {
+          year = year < 50 ? 2000 + year : 1900 + year;
+        }
+        const date = new Date(year, month - 1, day);
+        if (!isNaN(date.getTime())) {
+          return date;
+        }
+      }
+    } catch (e) {
+      // Continue to next strategy
+    }
+  }
+
+  // Strategy 5: Try Date.parse() as last resort
+  try {
+    const date = new Date(dateStr);
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  } catch (e) {
+    // Continue to fallback
+  }
+
+  // Strategy 6: Fallback to current date (never fail)
+  console.log(`[Import] Using current date for unrecognized format: "${dateStr}"`);
+  return new Date();
+};
+
+/**
  * Convert imported row to expense format
  */
 const rowToExpense = (row) => {
@@ -100,73 +235,14 @@ const rowToExpense = (row) => {
   inAmount = inAmount ? parseFloat(inAmount.toString().replace(/[$,]/g, '')) : 0;
   outAmount = outAmount ? parseFloat(outAmount.toString().replace(/[$,]/g, '')) : 0;
 
-  // Parse date - support various formats with robust error handling
-  let parsedDate;
+  // Parse date using flexible parser
+  const parsedDate = parseFlexibleDate(date);
+  const dateString = parsedDate.toISOString().split('T')[0];
 
-  try {
-    if (!date || date.trim() === '') {
-      // No date provided, use current date
-      parsedDate = new Date();
-    } else if (date.includes('/')) {
-      const parts = date.split('/');
-      // Assume mm/dd/YYYY format (common in Google Sheets)
-      if (parts.length === 3) {
-        let month = parseInt(parts[0], 10);
-        let day = parseInt(parts[1], 10);
-        let year = parseInt(parts[2], 10);
-
-        // Handle 2-digit year
-        if (year < 100) {
-          year = year < 50 ? 2000 + year : 1900 + year;
-        }
-
-        // Validate ranges
-        if (month < 1 || month > 12) {
-          throw new Error(`Invalid month: ${month}`);
-        }
-        if (day < 1 || day > 31) {
-          throw new Error(`Invalid day: ${day}`);
-        }
-        if (year < 1900 || year > 2100) {
-          throw new Error(`Invalid year: ${year}`);
-        }
-
-        // Create date in YYYY-MM-DD format
-        parsedDate = new Date(year, month - 1, day);
-
-        // Verify date was created correctly (handles invalid dates like Feb 31)
-        if (parsedDate.getFullYear() !== year ||
-            parsedDate.getMonth() !== month - 1 ||
-            parsedDate.getDate() !== day) {
-          throw new Error('Invalid date combination');
-        }
-      } else {
-        throw new Error('Invalid date format');
-      }
-    } else if (date.includes('-')) {
-      parsedDate = new Date(date);
-      if (isNaN(parsedDate.getTime())) {
-        throw new Error('Invalid date string');
-      }
-    } else {
-      // Try parsing as-is
-      parsedDate = new Date(date);
-      if (isNaN(parsedDate.getTime())) {
-        throw new Error('Unparseable date format');
-      }
-    }
-
-    // Final validation
-    if (!parsedDate || isNaN(parsedDate.getTime())) {
-      throw new Error('Date parse resulted in invalid date');
-    }
-  } catch (error) {
-    console.warn(`Date parsing failed for "${date}":`, error.message, '- using current date');
-    parsedDate = new Date();
-  }
+  console.log(`[Import] Parsed date "${date}" → ${dateString} (Date object: ${parsedDate})`);
 
   return {
-    date: parsedDate.toISOString().split('T')[0],
+    date: dateString,
     description: description || 'Imported expense',
     category: category || 'Other',
     inAmount: inAmount || 0,
@@ -203,17 +279,25 @@ export const importFromGoogleSheets = async (url, userId) => {
       throw new Error('No data found in the sheet');
     }
 
-    // Import each row as an expense
+    // Import each row as an expense (skip auto-sync for performance)
     let importedCount = 0;
     let skippedCount = 0;
+    console.log(`[Import] Starting batch import of ${rows.length} rows...`);
+
     for (const row of rows) {
       try {
         const expenseData = rowToExpense(row);
 
         // Validate that we have valid data
         if (expenseData.inAmount > 0 || expenseData.outAmount > 0) {
-          await addExpense(userId, expenseData);
+          // Skip sync during bulk import for performance
+          await addExpense(expenseData, { skipSync: true });
           importedCount++;
+
+          // Log progress every 50 rows
+          if (importedCount % 50 === 0) {
+            console.log(`[Import] Progress: ${importedCount}/${rows.length} expenses imported`);
+          }
         } else {
           skippedCount++;
           console.log('Skipped row with no amounts:', row);
@@ -226,7 +310,8 @@ export const importFromGoogleSheets = async (url, userId) => {
       }
     }
 
-    console.log(`Import complete: ${importedCount} imported, ${skippedCount} skipped`)
+    console.log(`[Import] Batch import complete: ${importedCount} imported, ${skippedCount} skipped`);
+    console.log(`[Import] Final sync to Google Sheets skipped (no webhook configured yet)`);
 
     return importedCount;
   } catch (error) {

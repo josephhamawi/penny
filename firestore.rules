@@ -6,31 +6,88 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
 
-    // User-scoped data structure
+    // Helper function - check if user is a member of a shared database
+    function isMember(databaseId) {
+      return request.auth != null &&
+             exists(/databases/$(database)/documents/sharedDatabases/$(databaseId)) &&
+             get(/databases/$(database)/documents/sharedDatabases/$(databaseId)).data.members.hasAny([request.auth.uid]);
+    }
+
+    // User profile documents (for invitation system)
     match /users/{userId} {
+      // Allow users to read any user profile (for finding users by email)
+      allow read: if request.auth != null;
+      // Allow users to create/update only their own profile
+      allow create, update: if isOwner(userId);
+      // Don't allow delete
+      allow delete: if false;
+
       // Expenses collection
       match /expenses/{expenseId} {
-        // Allow read/write only if authenticated user owns this data
-        allow read, write: if isOwner(userId);
+        // Allow read/write if user owns this data OR is a member of the shared database
+        allow read, write: if isOwner(userId) || isMember(userId);
       }
 
       // Settings collection (budget, webhookUrl)
       match /settings/{settingId} {
-        // Allow read/write only if authenticated user owns this data
-        allow read, write: if isOwner(userId);
+        // Allow read/write if user owns this data OR is a member of the shared database
+        allow read, write: if isOwner(userId) || isMember(userId);
       }
 
-      // Goals collection (for future AI features)
+      // Goals collection
       match /goals/{goalId} {
-        // Allow read/write only if authenticated user owns this data
-        allow read, write: if isOwner(userId);
+        // Allow read/write if user owns this data OR is a member of the shared database
+        allow read, write: if isOwner(userId) || isMember(userId);
       }
 
-      // Personality Reports collection (for future AI features)
+      // Personality Reports collection
       match /personalityReports/{reportId} {
-        // Allow read/write only if authenticated user owns this data
-        allow read, write: if isOwner(userId);
+        // Allow read/write if user owns this data OR is a member of the shared database
+        allow read, write: if isOwner(userId) || isMember(userId);
       }
+    }
+
+    // Invitations collection
+    match /invitations/{invitationId} {
+      // Allow authenticated users to create invitations
+      allow create: if request.auth != null && request.resource.data.inviterId == request.auth.uid;
+      // Allow users to read invitations where they are inviter or invitee
+      allow read: if request.auth != null &&
+                     (resource.data.inviterId == request.auth.uid ||
+                      resource.data.inviteeId == request.auth.uid ||
+                      resource.data.inviteeEmail == request.auth.token.email);
+      // Allow inviter to update their sent invitations
+      allow update: if request.auth != null && resource.data.inviterId == request.auth.uid;
+      // Allow invitee to update invitations sent to them (for accepting/rejecting)
+      allow update: if request.auth != null &&
+                       (resource.data.inviteeId == request.auth.uid ||
+                        resource.data.inviteeEmail == request.auth.token.email);
+      // Allow inviter to delete their sent invitations
+      allow delete: if request.auth != null && resource.data.inviterId == request.auth.uid;
+    }
+
+    // Shared Databases collection
+    match /sharedDatabases/{databaseId} {
+      // Allow members to read shared database info
+      allow read: if request.auth != null && resource.data.members.hasAny([request.auth.uid]);
+      // Allow owner to create/update shared database
+      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+      allow update: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      // Allow owner to delete shared database
+      allow delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
+    }
+
+    // Landing Page Collections (separate from app data)
+    // Visitors collection - allow anyone to write (for tracking), only admin to read
+    match /landing_visitors/{visitorId} {
+      allow create: if true; // Anyone can add visitor tracking
+      allow read, update, delete: if request.auth != null; // Only authenticated admin can read
+    }
+
+    // Waitlist collection - allow anyone to write, only admin to read
+    match /landing_waitlist/{emailId} {
+      allow create: if true; // Anyone can signup
+      allow read, update, delete: if request.auth != null; // Only authenticated admin can read
     }
 
     // Deny all other paths by default

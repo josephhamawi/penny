@@ -5,9 +5,11 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator
+  ActivityIndicator,
+  Image
 } from 'react-native';
 import { FontAwesome5 as Icon } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
 import { subscribeToExpenses } from '../services/expenseService';
 import { getCategoryConfig } from '../config/categories';
@@ -16,6 +18,7 @@ import { formatCurrency, formatNumber } from '../utils/formatNumber';
 import { useSubscription } from '../hooks/useSubscription';
 import PremiumBadge from '../components/PremiumBadge';
 import LockedFeatureCard from '../components/LockedFeatureCard';
+import { colors, shadows, typography } from '../theme/colors';
 
 const HomeScreen = ({ navigation }) => {
   const [expenses, setExpenses] = useState([]);
@@ -88,51 +91,68 @@ const HomeScreen = ({ navigation }) => {
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#6C63FF" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.headerSubtitle}>Total Balance</Text>
-          <Text style={styles.headerAmount}>${formatCurrency(currentBalance)}</Text>
+      {/* Extended Header with Gradient - includes Total Balance and Budget */}
+      <LinearGradient
+        colors={[colors.primaryDark, colors.primary]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.headerExtended}
+      >
+        {/* Top Section - Total Balance */}
+        <View style={styles.headerTop}>
+          <View style={styles.headerLeft}>
+            <View style={styles.logoContainerHome}>
+              <Image
+                source={require('../../public/newicon.png')}
+                style={styles.logoImageHome}
+                resizeMode="contain"
+              />
+            </View>
+            <View>
+              <Text style={styles.headerSubtitle}>Total Balance</Text>
+              <Text style={styles.headerAmount}>${formatCurrency(currentBalance)}</Text>
+            </View>
+          </View>
+          <View style={styles.headerActions}>
+            <PremiumBadge onPress={() => navigation.navigate('SubscriptionManagement')} />
+            <TouchableOpacity style={styles.notificationButton}>
+              <Icon name="bell" size={20} color={colors.text.primary} />
+            </TouchableOpacity>
+          </View>
         </View>
-        <View style={styles.headerActions}>
-          <PremiumBadge onPress={() => navigation.navigate('SubscriptionManagement')} />
-          <TouchableOpacity style={styles.notificationButton}>
-            <Icon name="bell" size={20} color="#FFF" />
-          </TouchableOpacity>
-        </View>
-      </View>
 
-      {/* Budget Card */}
-      <View style={styles.budgetCard}>
-        <View style={styles.budgetHeader}>
-          <Text style={styles.budgetLabel}>Monthly Budget Limit</Text>
-          <Text style={styles.budgetAmount}>${formatNumber(monthlyBudget)}</Text>
+        {/* Budget Card - now inside gradient */}
+        <View style={styles.budgetCard}>
+          <View style={styles.budgetHeader}>
+            <Text style={styles.budgetLabel}>Monthly Budget Limit</Text>
+            <Text style={styles.budgetAmount}>${formatNumber(monthlyBudget)}</Text>
+          </View>
+          <View style={styles.budgetBarContainer}>
+            <View style={[styles.budgetBar, { width: `${Math.min(budgetUsed, 100)}%` }]} />
+          </View>
+          <View style={styles.budgetFooter}>
+            <Text style={styles.budgetUsed}>${formatCurrency(totalExpenses)} spent</Text>
+            <Text style={styles.budgetRemaining}>${formatCurrency(budgetRemaining)} left</Text>
+          </View>
         </View>
-        <View style={styles.budgetBarContainer}>
-          <View style={[styles.budgetBar, { width: `${Math.min(budgetUsed, 100)}%` }]} />
-        </View>
-        <View style={styles.budgetFooter}>
-          <Text style={styles.budgetUsed}>${formatCurrency(totalExpenses)} spent</Text>
-          <Text style={styles.budgetRemaining}>${formatCurrency(budgetRemaining)} left</Text>
-        </View>
-      </View>
+      </LinearGradient>
 
       {/* Quick Stats */}
       <View style={styles.quickStats}>
-        <View style={[styles.statBox, { backgroundColor: '#E8F5E9' }]}>
-          <Icon name="arrow-down" size={24} color="#4CAF50" solid />
+        <View style={styles.statBox}>
+          <Icon name="arrow-down" size={24} color={colors.income} solid />
           <Text style={styles.statValue}>${formatNumber(totalIncome)}</Text>
           <Text style={styles.statLabel}>Income</Text>
         </View>
-        <View style={[styles.statBox, { backgroundColor: '#FFEBEE' }]}>
-          <Icon name="arrow-up" size={24} color="#F44336" solid />
+        <View style={styles.statBox}>
+          <Icon name="arrow-up" size={24} color={colors.expense} solid />
           <Text style={styles.statValue}>${formatNumber(totalExpenses)}</Text>
           <Text style={styles.statLabel}>Expenses</Text>
         </View>
@@ -198,7 +218,7 @@ const HomeScreen = ({ navigation }) => {
                     <Icon
                       name={isIncome ? 'arrow-up' : 'arrow-down'}
                       size={12}
-                      color={isIncome ? '#4CAF50' : '#F44336'}
+                      color={isIncome ? colors.income : colors.expense}
                       solid
                     />
                   </View>
@@ -237,35 +257,50 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F6FA',
+    backgroundColor: colors.background,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5F6FA',
+    backgroundColor: colors.background,
   },
-  header: {
-    backgroundColor: '#6C63FF',
+  headerExtended: {
     paddingTop: 60,
-    paddingBottom: 30,
+    paddingBottom: 20,
     paddingHorizontal: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
   },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 20,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logoContainerHome: {
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  logoImageHome: {
+    width: '100%',
+    height: '100%',
+  },
   headerSubtitle: {
-    color: '#FFF',
-    fontSize: 14,
+    ...typography.caption,
     opacity: 0.9,
     marginBottom: 5,
   },
   headerAmount: {
-    color: '#FFF',
+    ...typography.h1,
     fontSize: 36,
-    fontWeight: 'bold',
   },
   headerActions: {
     flexDirection: 'row',
@@ -276,36 +311,36 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: colors.glass.background,
+    borderWidth: 1,
+    borderColor: colors.glass.borderLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
   upgradeBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF',
+    backgroundColor: colors.glass.background,
+    borderWidth: 1,
+    borderColor: colors.glass.border,
     marginHorizontal: 20,
     marginBottom: 20,
     padding: 15,
     borderRadius: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-    borderLeftWidth: 4,
-    borderLeftColor: '#FFD700',
+    ...shadows.md,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
   },
   bannerText: {
     flex: 1,
     fontSize: 14,
-    color: '#333',
+    color: colors.text.primary,
     marginLeft: 10,
   },
   upgradeButton: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#6C63FF',
+    color: colors.primary,
     marginRight: 10,
   },
   premiumSection: {
@@ -313,16 +348,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   budgetCard: {
-    margin: 20,
-    marginTop: -20,
     padding: 20,
-    backgroundColor: '#FFF',
+    backgroundColor: 'rgba(10, 14, 39, 0.4)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
     borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    ...shadows.md,
   },
   budgetHeader: {
     flexDirection: 'row',
@@ -332,23 +363,23 @@ const styles = StyleSheet.create({
   },
   budgetLabel: {
     fontSize: 14,
-    color: '#666',
+    color: colors.text.secondary,
   },
   budgetAmount: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: colors.text.primary,
   },
   budgetBarContainer: {
     height: 8,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 4,
     overflow: 'hidden',
     marginBottom: 10,
   },
   budgetBar: {
     height: '100%',
-    backgroundColor: '#6C63FF',
+    backgroundColor: '#FFFFFF',
     borderRadius: 4,
   },
   budgetFooter: {
@@ -357,11 +388,11 @@ const styles = StyleSheet.create({
   },
   budgetUsed: {
     fontSize: 12,
-    color: '#666',
+    color: 'rgba(255, 255, 255, 0.7)',
   },
   budgetRemaining: {
     fontSize: 12,
-    color: '#4CAF50',
+    color: '#FFFFFF',
     fontWeight: '600',
   },
   quickStats: {
@@ -376,25 +407,30 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 15,
     alignItems: 'center',
+    backgroundColor: colors.glass.background,
+    borderWidth: 1,
+    borderColor: colors.glass.borderLight,
+    ...shadows.sm,
   },
   statValue: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: colors.text.primary,
     marginTop: 8,
   },
   statLabel: {
     fontSize: 12,
-    color: '#666',
+    color: colors.text.secondary,
     marginTop: 4,
   },
   recentSection: {
     paddingHorizontal: 20,
+    marginBottom: 100,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: colors.text.primary,
     marginBottom: 15,
   },
   sectionHeader: {
@@ -404,22 +440,20 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   seeAll: {
-    color: '#6C63FF',
+    color: colors.primary,
     fontSize: 14,
     fontWeight: '600',
   },
   recordItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF',
+    backgroundColor: colors.glass.background,
+    borderWidth: 1,
+    borderColor: colors.glass.borderLight,
     padding: 15,
     borderRadius: 15,
     marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    ...shadows.sm,
   },
   recordIcon: {
     width: 50,
@@ -441,31 +475,33 @@ const styles = StyleSheet.create({
   recordTitle: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#333',
+    color: colors.text.primary,
     marginBottom: 4,
   },
   recordDate: {
     fontSize: 12,
-    color: '#999',
+    color: colors.text.tertiary,
   },
   recordAmount: {
     fontSize: 16,
     fontWeight: 'bold',
   },
   incomeAmount: {
-    color: '#4CAF50',
+    color: colors.income,
   },
   expenseAmount: {
-    color: '#F44336',
+    color: colors.expense,
   },
   emptyRecords: {
-    backgroundColor: '#FFF',
+    backgroundColor: colors.glass.background,
+    borderWidth: 1,
+    borderColor: colors.glass.borderLight,
     padding: 40,
     borderRadius: 15,
     alignItems: 'center',
   },
   emptyRecordsText: {
-    color: '#999',
+    color: colors.text.tertiary,
     fontSize: 14,
   },
 });

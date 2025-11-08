@@ -10,6 +10,7 @@ import {
 import { FontAwesome5 as Icon } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSubscription } from '../hooks/useSubscription';
+import { colors, shadows, typography } from '../theme/colors';
 
 /**
  * Subscription Management Screen
@@ -31,7 +32,7 @@ const SubscriptionManagementScreen = ({ navigation }) => {
   // MOCK DATA - Will be replaced with real data
   const mockSubscriptionData = {
     planName: isPremium ? 'Monthly Premium' : 'Free Plan',
-    price: isPremium ? '$10.00/month' : '$0.00',
+    price: isPremium ? '$4.99/month' : '$0.00',
     nextBillingDate: isPremium ? 'December 7, 2025' : null,
     status: isPremium ? 'Active' : 'Free',
     trialEndsDate: null, // Set if in trial
@@ -86,7 +87,7 @@ const SubscriptionManagementScreen = ({ navigation }) => {
             style={styles.backButton}
             onPress={() => navigation.goBack()}
           >
-            <Icon name="arrow-left" size={24} color="#333" />
+            <Icon name="arrow-left" size={24} color={colors.text.primary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Subscription</Text>
           <View style={{ width: 40 }} />
@@ -95,12 +96,12 @@ const SubscriptionManagementScreen = ({ navigation }) => {
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.freeUserContainer}>
             <LinearGradient
-              colors={['#1976D2', '#00BFA6']}
+              colors={colors.primaryGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.gradientCircle}
             >
-              <Icon name="gem" size={40} color="#FFF" solid />
+              <Icon name="gem" size={40} color={colors.text.primary} solid />
             </LinearGradient>
             <Text style={styles.freeUserTitle}>You're on the Free Plan</Text>
             <Text style={styles.freeUserSubtitle}>
@@ -121,7 +122,7 @@ const SubscriptionManagementScreen = ({ navigation }) => {
                   <Icon
                     name={feature.enabled ? 'check-circle' : 'lock'}
                     size={20}
-                    color={feature.enabled ? '#00BFA6' : '#999'}
+                    color={feature.enabled ? colors.income : colors.text.tertiary}
                   />
                   <Text
                     style={[
@@ -148,7 +149,7 @@ const SubscriptionManagementScreen = ({ navigation }) => {
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Icon name="arrow-left" size={24} color="#333" />
+          <Icon name="arrow-left" size={24} color={colors.text.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Subscription</Text>
         <View style={{ width: 40 }} />
@@ -158,12 +159,12 @@ const SubscriptionManagementScreen = ({ navigation }) => {
         {/* Premium Status Card */}
         <View style={styles.statusCard}>
           <LinearGradient
-            colors={['#1976D2', '#00BFA6']}
+            colors={colors.primaryGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.statusGradient}
           >
-            <Icon name="gem" size={30} color="#FFF" solid />
+            <Icon name="gem" size={30} color={colors.text.primary} solid />
             <Text style={styles.statusTitle}>Premium Active</Text>
             <Text style={styles.statusSubtitle}>{mockSubscriptionData.planName}</Text>
           </LinearGradient>
@@ -207,7 +208,7 @@ const SubscriptionManagementScreen = ({ navigation }) => {
           <Text style={styles.sectionTitle}>Your Features</Text>
           {mockSubscriptionData.features.map((feature, index) => (
             <View key={index} style={styles.featureRow}>
-              <Icon name="check-circle" size={20} color="#00BFA6" />
+              <Icon name="check-circle" size={20} color={colors.income} />
               <Text style={styles.featureText}>{feature.name}</Text>
             </View>
           ))}
@@ -219,35 +220,35 @@ const SubscriptionManagementScreen = ({ navigation }) => {
             style={styles.actionButton}
             onPress={handleManageSubscription}
           >
-            <Icon name="cog" size={20} color="#1976D2" />
+            <Icon name="cog" size={20} color={colors.primary} />
             <Text style={styles.actionButtonText}>Manage Subscription</Text>
-            <Icon name="chevron-right" size={20} color="#999" />
+            <Icon name="chevron-right" size={20} color={colors.text.tertiary} />
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.actionButton}
             onPress={handleContactSupport}
           >
-            <Icon name="question-circle" size={20} color="#1976D2" />
+            <Icon name="question-circle" size={20} color={colors.primary} />
             <Text style={styles.actionButtonText}>Contact Support</Text>
-            <Icon name="chevron-right" size={20} color="#999" />
+            <Icon name="chevron-right" size={20} color={colors.text.tertiary} />
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.actionButton, styles.dangerButton]}
             onPress={handleCancelSubscription}
           >
-            <Icon name="times-circle" size={20} color="#F44336" />
+            <Icon name="times-circle" size={20} color={colors.expense} />
             <Text style={[styles.actionButtonText, styles.dangerText]}>
               Cancel Subscription
             </Text>
-            <Icon name="chevron-right" size={20} color="#999" />
+            <Icon name="chevron-right" size={20} color={colors.text.tertiary} />
           </TouchableOpacity>
         </View>
 
         {/* Mock Data Notice */}
         <View style={styles.mockNotice}>
-          <Icon name="info-circle" size={16} color="#FF9800" />
+          <Icon name="info-circle" size={16} color={colors.warning} />
           <Text style={styles.mockNoticeText}>
             Using mock data - Will connect to real subscriptions when Agent 2 is ready
           </Text>
@@ -260,7 +261,7 @@ const SubscriptionManagementScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F6FA',
+    backgroundColor: colors.background,
   },
   header: {
     flexDirection: 'row',
@@ -269,17 +270,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 20,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.glass.background,
     borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: colors.glass.border,
   },
   backButton: {
     padding: 8,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
+    ...typography.h3,
   },
   content: {
     flex: 1,
@@ -289,43 +288,34 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderRadius: 15,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 5,
+    ...shadows.lg,
   },
   statusGradient: {
     padding: 30,
     alignItems: 'center',
   },
   statusTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#FFF',
+    ...typography.h2,
+    color: colors.text.primary,
     marginTop: 15,
   },
   statusSubtitle: {
-    fontSize: 16,
-    color: '#FFF',
+    ...typography.body,
+    color: colors.text.primary,
     opacity: 0.9,
     marginTop: 5,
   },
   detailsCard: {
-    backgroundColor: '#FFF',
+    backgroundColor: colors.glass.background,
     borderRadius: 15,
     padding: 20,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: colors.glass.border,
+    ...shadows.md,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    ...typography.h3,
     marginBottom: 20,
   },
   detailRow: {
@@ -334,27 +324,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: colors.glass.borderLight,
   },
   detailLabel: {
-    fontSize: 16,
-    color: '#666',
+    ...typography.body,
+    color: colors.text.secondary,
   },
   detailValue: {
-    fontSize: 16,
+    ...typography.body,
     fontWeight: '600',
-    color: '#333',
   },
   statusBadge: {
-    backgroundColor: '#E8F5E9',
+    backgroundColor: colors.glass.background,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.income,
   },
   statusBadgeText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#4CAF50',
+    color: colors.income,
   },
   featureRow: {
     flexDirection: 'row',
@@ -362,23 +353,20 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   featureText: {
-    fontSize: 16,
-    color: '#333',
+    ...typography.body,
     marginLeft: 15,
   },
   featureTextDisabled: {
-    color: '#999',
+    color: colors.text.tertiary,
   },
   actionsCard: {
-    backgroundColor: '#FFF',
+    backgroundColor: colors.glass.background,
     borderRadius: 15,
     padding: 15,
     marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: colors.glass.border,
+    ...shadows.md,
   },
   actionButton: {
     flexDirection: 'row',
@@ -386,19 +374,18 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: colors.glass.borderLight,
   },
   actionButtonText: {
     flex: 1,
-    fontSize: 16,
-    color: '#333',
+    ...typography.body,
     marginLeft: 15,
   },
   dangerButton: {
     borderBottomWidth: 0,
   },
   dangerText: {
-    color: '#F44336',
+    color: colors.expense,
   },
   freeUserContainer: {
     alignItems: 'center',
@@ -411,59 +398,56 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
+    ...shadows.glow,
   },
   freeUserTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
+    ...typography.h2,
     marginBottom: 10,
   },
   freeUserSubtitle: {
-    fontSize: 16,
-    color: '#666',
+    ...typography.bodySecondary,
     textAlign: 'center',
     marginBottom: 30,
   },
   upgradeButton: {
-    backgroundColor: '#1976D2',
+    backgroundColor: colors.primary,
     paddingVertical: 15,
     paddingHorizontal: 40,
     borderRadius: 25,
     marginBottom: 40,
+    ...shadows.md,
   },
   upgradeButtonText: {
-    color: '#FFF',
+    color: colors.text.primary,
     fontSize: 16,
     fontWeight: '600',
   },
   featuresPreview: {
     width: '100%',
-    backgroundColor: '#FFF',
+    backgroundColor: colors.glass.background,
     borderRadius: 15,
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    borderWidth: 1,
+    borderColor: colors.glass.border,
+    ...shadows.md,
   },
   featuresTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    ...typography.h3,
     marginBottom: 15,
   },
   mockNotice: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 15,
-    backgroundColor: '#FFF3E0',
+    backgroundColor: colors.glass.background,
     borderRadius: 10,
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: colors.warning,
   },
   mockNoticeText: {
     fontSize: 12,
-    color: '#F57C00',
+    color: colors.warning,
     marginLeft: 10,
     flex: 1,
   },

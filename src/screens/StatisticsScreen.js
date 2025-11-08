@@ -10,10 +10,12 @@ import {
 } from 'react-native';
 import { PieChart, BarChart } from 'react-native-chart-kit';
 import { FontAwesome5 as Icon } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../contexts/AuthContext';
 import { subscribeToExpenses } from '../services/expenseService';
 import { getCategoryConfig } from '../config/categories';
 import { formatCurrency, formatNumber } from '../utils/formatNumber';
+import { colors, shadows, typography } from '../theme/colors';
 
 const { width } = Dimensions.get('window');
 
@@ -84,22 +86,27 @@ const StatisticsScreen = () => {
     name: category.length > 15 ? category.substring(0, 12) + '...' : category,
     amount: Math.round(amount * 1000) / 1000, // Round to 3 decimal places
     color: getCategoryConfig(category).color,
-    legendFontColor: '#7F7F7F',
+    legendFontColor: colors.text.secondary,
     legendFontSize: 11,
   }));
 
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#6C63FF" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Header */}
-      <View style={styles.header}>
+      {/* Header with Gradient */}
+      <LinearGradient
+        colors={[colors.primaryDark, colors.primary]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.header}
+      >
         <View>
           <Text style={styles.headerTitle}>Statistics</Text>
           <Text style={styles.headerSubtitle}>
@@ -124,29 +131,29 @@ const StatisticsScreen = () => {
             </Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </LinearGradient>
 
       {/* Summary Cards */}
       <View style={styles.summaryCards}>
-        <View style={[styles.summaryCard, { backgroundColor: '#E8F5E9' }]}>
+        <View style={styles.summaryCard}>
           <View style={styles.summaryIcon}>
-            <Icon name="arrow-down" size={24} color="#4CAF50" solid />
+            <Icon name="arrow-down" size={24} color={colors.income} solid />
           </View>
           <View style={styles.summaryContent}>
             <Text style={styles.summaryLabel}>Total Income</Text>
-            <Text style={[styles.summaryValue, { color: '#4CAF50' }]}>
+            <Text style={[styles.summaryValue, { color: colors.income }]}>
               ${formatCurrency(totalIncome)}
             </Text>
           </View>
         </View>
 
-        <View style={[styles.summaryCard, { backgroundColor: '#FFEBEE' }]}>
+        <View style={styles.summaryCard}>
           <View style={styles.summaryIcon}>
-            <Icon name="arrow-up" size={24} color="#F44336" solid />
+            <Icon name="arrow-up" size={24} color={colors.expense} solid />
           </View>
           <View style={styles.summaryContent}>
             <Text style={styles.summaryLabel}>Total Expenses</Text>
-            <Text style={[styles.summaryValue, { color: '#F44336' }]}>
+            <Text style={[styles.summaryValue, { color: colors.expense }]}>
               ${formatCurrency(totalExpenses)}
             </Text>
           </View>
@@ -172,7 +179,7 @@ const StatisticsScreen = () => {
         </View>
       ) : (
         <View style={styles.emptyChart}>
-          <Icon name="chart-pie" size={60} color="#E0E0E0" />
+          <Icon name="chart-pie" size={60} color={colors.glass.borderLight} />
           <Text style={styles.emptyChartText}>No expenses to show</Text>
         </View>
       )}
@@ -192,7 +199,7 @@ const StatisticsScreen = () => {
                 </View>
                 <View style={styles.categoryContent}>
                   <View style={styles.categoryHeader}>
-                    <Text style={styles.categoryName}>{category}</Text>
+                    <Text style={styles.categoryName} numberOfLines={1} ellipsizeMode="tail">{category}</Text>
                     <Text style={styles.categoryAmount}>${formatCurrency(amount)}</Text>
                   </View>
                   <View style={styles.categoryBar}>
@@ -219,38 +226,38 @@ const StatisticsScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F6FA',
+    backgroundColor: colors.background,
   },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5F6FA',
+    backgroundColor: colors.background,
   },
   header: {
-    backgroundColor: '#FFF',
     paddingTop: 60,
     paddingBottom: 20,
     paddingHorizontal: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
   headerTitle: {
+    ...typography.h1,
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: '#999',
+    ...typography.caption,
+    opacity: 0.9,
     marginTop: 4,
   },
   periodSelector: {
     flexDirection: 'row',
-    backgroundColor: '#F5F6FA',
+    backgroundColor: colors.glass.background,
+    borderWidth: 1,
+    borderColor: colors.glass.borderLight,
     borderRadius: 12,
     padding: 4,
   },
@@ -260,15 +267,15 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   periodButtonActive: {
-    backgroundColor: '#6C63FF',
+    backgroundColor: colors.text.primary,
   },
   periodText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#999',
+    color: colors.text.secondary,
   },
   periodTextActive: {
-    color: '#FFF',
+    color: colors.primaryDark,
   },
   summaryCards: {
     flexDirection: 'row',
@@ -282,12 +289,16 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 15,
     alignItems: 'center',
+    backgroundColor: colors.glass.background,
+    borderWidth: 1,
+    borderColor: colors.glass.borderLight,
+    ...shadows.sm,
   },
   summaryIcon: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.backgroundLight,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -297,7 +308,7 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 12,
-    color: '#666',
+    color: colors.text.secondary,
     marginBottom: 4,
   },
   summaryValue: {
@@ -308,52 +319,51 @@ const styles = StyleSheet.create({
     margin: 20,
     marginTop: 20,
     padding: 20,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.glass.background,
+    borderWidth: 1,
+    borderColor: colors.glass.borderLight,
     borderRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
+    ...shadows.md,
   },
   chartTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: colors.text.primary,
     marginBottom: 15,
   },
   emptyChart: {
     margin: 20,
     padding: 60,
-    backgroundColor: '#FFF',
+    backgroundColor: colors.glass.background,
+    borderWidth: 1,
+    borderColor: colors.glass.borderLight,
     borderRadius: 20,
     alignItems: 'center',
   },
   emptyChartText: {
     fontSize: 14,
-    color: '#999',
+    color: colors.text.secondary,
     marginTop: 15,
   },
   categorySection: {
     paddingHorizontal: 20,
+    marginBottom: 100,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
+    color: colors.text.primary,
     marginBottom: 15,
   },
   categoryItem: {
     flexDirection: 'row',
-    backgroundColor: '#FFF',
+    backgroundColor: colors.glass.background,
+    borderWidth: 1,
+    borderColor: colors.glass.borderLight,
     padding: 15,
     borderRadius: 15,
     marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    ...shadows.sm,
   },
   categoryIcon: {
     width: 48,
@@ -373,18 +383,20 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   categoryName: {
+    flex: 1,
     fontSize: 15,
     fontWeight: '600',
-    color: '#333',
+    color: colors.text.primary,
+    marginRight: 10,
   },
   categoryAmount: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: colors.text.primary,
   },
   categoryBar: {
     height: 6,
-    backgroundColor: '#F0F0F0',
+    backgroundColor: colors.glass.borderLight,
     borderRadius: 3,
     overflow: 'hidden',
     marginBottom: 6,
@@ -395,7 +407,7 @@ const styles = StyleSheet.create({
   },
   categoryPercentage: {
     fontSize: 12,
-    color: '#999',
+    color: colors.text.secondary,
   },
 });
 
