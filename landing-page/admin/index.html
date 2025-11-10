@@ -179,7 +179,7 @@
         <main class="max-w-7xl mx-auto px-4 py-8">
 
             <!-- Stats Cards -->
-            <div class="grid md:grid-cols-3 gap-6 mb-8">
+            <div class="grid md:grid-cols-4 gap-6 mb-8">
                 <!-- Total Visitors -->
                 <div class="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
                     <div class="flex items-center justify-between mb-4">
@@ -200,6 +200,16 @@
                     <p class="text-sm text-slate-500 mt-2">Email subscribers</p>
                 </div>
 
+                <!-- Contact Messages -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-medium text-slate-600">Contact Messages</h3>
+                        <span class="text-2xl">💬</span>
+                    </div>
+                    <p class="text-4xl font-bold text-slate-900" id="totalMessages">0</p>
+                    <p class="text-sm text-slate-500 mt-2">Support inquiries</p>
+                </div>
+
                 <!-- Conversion Rate -->
                 <div class="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
                     <div class="flex items-center justify-between mb-4">
@@ -208,6 +218,38 @@
                     </div>
                     <p class="text-4xl font-bold text-slate-900" id="conversionRate">0%</p>
                     <p class="text-sm text-slate-500 mt-2">Visitors to signups</p>
+                </div>
+            </div>
+
+            <!-- Suggestions Table -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-penny-200 mb-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-slate-900">User Suggestions</h2>
+                    <button
+                        id="exportSuggestionsBtn"
+                        class="px-4 py-2 bg-penny-500 text-white font-medium rounded-lg hover:bg-penny-600 transition-colors"
+                    >
+                        Export CSV
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-slate-200">
+                                <th class="text-left py-3 px-4 text-sm font-semibold text-slate-700">#</th>
+                                <th class="text-left py-3 px-4 text-sm font-semibold text-slate-700">Suggestion</th>
+                                <th class="text-left py-3 px-4 text-sm font-semibold text-slate-700">Email</th>
+                                <th class="text-left py-3 px-4 text-sm font-semibold text-slate-700">Date</th>
+                                <th class="text-left py-3 px-4 text-sm font-semibold text-slate-700">Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="suggestionsTableBody">
+                            <tr>
+                                <td colspan="5" class="text-center py-8 text-slate-500">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -236,6 +278,39 @@
                         <tbody id="emailTableBody">
                             <tr>
                                 <td colspan="4" class="text-center py-8 text-slate-500">Loading...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Contact Messages Table -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-slate-200 mb-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-slate-900">Contact Messages</h2>
+                    <button
+                        id="exportMessagesBtn"
+                        class="px-4 py-2 bg-penny-500 text-white font-medium rounded-lg hover:bg-penny-600 transition-colors"
+                    >
+                        Export CSV
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-slate-200">
+                                <th class="text-left py-3 px-4 text-sm font-semibold text-slate-700">#</th>
+                                <th class="text-left py-3 px-4 text-sm font-semibold text-slate-700">Name</th>
+                                <th class="text-left py-3 px-4 text-sm font-semibold text-slate-700">Email</th>
+                                <th class="text-left py-3 px-4 text-sm font-semibold text-slate-700">Subject</th>
+                                <th class="text-left py-3 px-4 text-sm font-semibold text-slate-700">Message</th>
+                                <th class="text-left py-3 px-4 text-sm font-semibold text-slate-700">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody id="messagesTableBody">
+                            <tr>
+                                <td colspan="6" class="text-center py-8 text-slate-500">Loading...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -489,18 +564,42 @@
                 });
                 document.getElementById('totalEmails').textContent = emails.length;
 
+                // Load suggestions
+                const suggestionsSnapshot = await db.collection('landing_suggestions').orderBy('timestamp', 'desc').get();
+                const suggestions = [];
+                suggestionsSnapshot.forEach((doc) => {
+                    suggestions.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+
+                // Load contact messages
+                const messagesSnapshot = await db.collection('landing_contact_messages').orderBy('timestamp', 'desc').get();
+                const messages = [];
+                messagesSnapshot.forEach((doc) => {
+                    messages.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                document.getElementById('totalMessages').textContent = messages.length;
+
                 // Calculate conversion rate
                 const conversionRate = visitorCount > 0 ? ((emails.length / visitorCount) * 100).toFixed(1) : 0;
                 document.getElementById('conversionRate').textContent = conversionRate + '%';
 
                 // Populate tables
+                populateSuggestionsTable(suggestions);
                 populateEmailTable(emails);
+                populateMessagesTable(messages);
                 populateVisitorTable(visitorsSnapshot);
 
             } catch (error) {
                 console.error('Error loading dashboard data:', error);
                 // Fallback to localStorage if Firestore fails
                 const emails = JSON.parse(localStorage.getItem('penny_waitlist') || '[]');
+                const suggestions = JSON.parse(localStorage.getItem('penny_suggestions') || '[]');
                 const visitorCount = parseInt(localStorage.getItem('penny_visitor_count') || '0');
 
                 document.getElementById('totalVisitors').textContent = visitorCount;
@@ -509,8 +608,84 @@
                 const conversionRate = visitorCount > 0 ? ((emails.length / visitorCount) * 100).toFixed(1) : 0;
                 document.getElementById('conversionRate').textContent = conversionRate + '%';
 
+                populateSuggestionsTable(suggestions);
                 populateEmailTable(emails);
             }
+        }
+
+        function populateSuggestionsTable(suggestions) {
+            const tbody = document.getElementById('suggestionsTableBody');
+
+            if (suggestions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-500">No suggestions yet</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = suggestions.map((entry, index) => {
+                const timestamp = entry.timestamp;
+                let date;
+
+                if (timestamp && timestamp.toDate) {
+                    date = timestamp.toDate();
+                } else if (typeof timestamp === 'string') {
+                    date = new Date(timestamp);
+                } else {
+                    date = new Date();
+                }
+
+                return `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                        <td class="py-3 px-4 text-sm text-slate-600">${index + 1}</td>
+                        <td class="py-3 px-4 text-sm text-slate-900 max-w-md">
+                            <div class="line-clamp-2">${escapeHtml(entry.suggestion)}</div>
+                        </td>
+                        <td class="py-3 px-4 text-sm font-medium text-slate-700">${escapeHtml(entry.email || 'Anonymous')}</td>
+                        <td class="py-3 px-4 text-sm text-slate-600">${date.toLocaleDateString()}</td>
+                        <td class="py-3 px-4 text-sm text-slate-600">${date.toLocaleTimeString()}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function populateMessagesTable(messages) {
+            const tbody = document.getElementById('messagesTableBody');
+
+            if (messages.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-slate-500">No contact messages yet</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = messages.map((entry, index) => {
+                const timestamp = entry.timestamp;
+                let date;
+
+                if (timestamp && timestamp.toDate) {
+                    date = timestamp.toDate();
+                } else if (typeof timestamp === 'string') {
+                    date = new Date(timestamp);
+                } else {
+                    date = new Date();
+                }
+
+                return `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50">
+                        <td class="py-3 px-4 text-sm text-slate-600">${index + 1}</td>
+                        <td class="py-3 px-4 text-sm font-medium text-slate-900">${escapeHtml(entry.name || 'N/A')}</td>
+                        <td class="py-3 px-4 text-sm text-slate-700">${escapeHtml(entry.email || 'N/A')}</td>
+                        <td class="py-3 px-4 text-sm text-slate-700">${escapeHtml(entry.subject || 'N/A')}</td>
+                        <td class="py-3 px-4 text-sm text-slate-600 max-w-xs">
+                            <div class="line-clamp-2">${escapeHtml(entry.message || 'N/A')}</div>
+                        </td>
+                        <td class="py-3 px-4 text-sm text-slate-600 whitespace-nowrap">${date.toLocaleDateString()}</td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         function populateEmailTable(emails) {
@@ -584,6 +759,106 @@
         // ========================================
         // EXPORT FUNCTIONALITY
         // ========================================
+        document.getElementById('exportSuggestionsBtn').addEventListener('click', async function() {
+            try {
+                const suggestionsSnapshot = await db.collection('landing_suggestions').orderBy('timestamp', 'desc').get();
+                const suggestions = [];
+
+                suggestionsSnapshot.forEach((doc) => {
+                    suggestions.push(doc.data());
+                });
+
+                if (suggestions.length === 0) {
+                    alert('No suggestions to export');
+                    return;
+                }
+
+                // Create CSV content
+                let csv = 'Suggestion,Email,Date,Time\n';
+                suggestions.forEach(entry => {
+                    const timestamp = entry.timestamp;
+                    let date;
+
+                    if (timestamp && timestamp.toDate) {
+                        date = timestamp.toDate();
+                    } else if (typeof timestamp === 'string') {
+                        date = new Date(timestamp);
+                    } else {
+                        date = new Date();
+                    }
+
+                    // Escape quotes in suggestion text
+                    const suggestion = (entry.suggestion || '').replace(/"/g, '""');
+                    csv += `"${suggestion}",${entry.email || 'Anonymous'},${date.toLocaleDateString()},${date.toLocaleTimeString()}\n`;
+                });
+
+                // Download CSV file
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `penny-suggestions-${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Export error:', error);
+                alert('Error exporting data. Please try again.');
+            }
+        });
+
+        document.getElementById('exportMessagesBtn').addEventListener('click', async function() {
+            try {
+                const messagesSnapshot = await db.collection('landing_contact_messages').orderBy('timestamp', 'desc').get();
+                const messages = [];
+
+                messagesSnapshot.forEach((doc) => {
+                    messages.push(doc.data());
+                });
+
+                if (messages.length === 0) {
+                    alert('No contact messages to export');
+                    return;
+                }
+
+                // Create CSV content
+                let csv = 'Name,Email,Subject,Message,Date,Time\n';
+                messages.forEach(entry => {
+                    const timestamp = entry.timestamp;
+                    let date;
+
+                    if (timestamp && timestamp.toDate) {
+                        date = timestamp.toDate();
+                    } else if (typeof timestamp === 'string') {
+                        date = new Date(timestamp);
+                    } else {
+                        date = new Date();
+                    }
+
+                    // Escape quotes in text fields
+                    const name = (entry.name || '').replace(/"/g, '""');
+                    const subject = (entry.subject || '').replace(/"/g, '""');
+                    const message = (entry.message || '').replace(/"/g, '""');
+                    csv += `"${name}",${entry.email || 'N/A'},"${subject}","${message}",${date.toLocaleDateString()},${date.toLocaleTimeString()}\n`;
+                });
+
+                // Download CSV file
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `penny-contact-messages-${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Export error:', error);
+                alert('Error exporting data. Please try again.');
+            }
+        });
+
         document.getElementById('exportBtn').addEventListener('click', async function() {
             try {
                 const waitlistSnapshot = await db.collection('landing_waitlist').orderBy('timestamp', 'desc').get();

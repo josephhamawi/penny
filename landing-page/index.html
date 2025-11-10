@@ -301,6 +301,51 @@
         </div>
     </section>
 
+    <!-- Suggestion Form Section -->
+    <section id="suggestions" class="py-20 px-4 bg-gradient-to-br from-slate-50 to-penny-50">
+        <div class="max-w-2xl mx-auto text-center">
+            <h3 class="text-4xl font-bold text-slate-900 mb-4">Share Your Ideas</h3>
+            <p class="text-lg text-slate-600 mb-10">
+                Help us build the best expense tracking experience. What features would you love to see?
+            </p>
+
+            <!-- Suggestion Form -->
+            <form id="suggestionForm" class="space-y-4 max-w-xl mx-auto">
+                <div class="text-left">
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Your Email (optional)</label>
+                    <input
+                        type="email"
+                        id="suggestionEmail"
+                        placeholder="your@email.com"
+                        class="w-full px-6 py-3 rounded-xl border-2 border-slate-200 focus:border-penny-500 focus:outline-none text-slate-800 shadow-sm"
+                    />
+                </div>
+                <div class="text-left">
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Your Suggestion *</label>
+                    <textarea
+                        id="suggestionText"
+                        required
+                        rows="4"
+                        placeholder="I'd love to see..."
+                        class="w-full px-6 py-3 rounded-xl border-2 border-slate-200 focus:border-penny-500 focus:outline-none text-slate-800 shadow-sm resize-none"
+                    ></textarea>
+                </div>
+                <button
+                    type="submit"
+                    class="btn-primary w-full bg-gradient-to-r from-penny-500 to-penny-600 text-white font-semibold px-8 py-4 rounded-full shadow-lg hover:shadow-xl"
+                >
+                    Submit Suggestion
+                </button>
+            </form>
+
+            <!-- Success Message (hidden by default) -->
+            <div id="suggestionSuccessMessage" class="hidden bg-penny-50 border-2 border-penny-500 text-penny-800 px-6 py-4 rounded-2xl max-w-xl mx-auto mt-6">
+                <p class="font-semibold">✨ Thank you for your suggestion!</p>
+                <p class="text-sm mt-1">We truly appreciate your feedback.</p>
+            </div>
+        </div>
+    </section>
+
     <!-- Footer -->
     <footer class="py-12 px-4 border-t border-slate-200 bg-white/30">
         <div class="max-w-6xl mx-auto">
@@ -316,10 +361,10 @@
 
                 <!-- Links -->
                 <div class="flex gap-8">
-                    <a href="#privacy" class="text-slate-600 hover:text-penny-600 transition-colors text-sm font-medium">
+                    <a href="privacy.html" class="text-slate-600 hover:text-penny-600 transition-colors text-sm font-medium">
                         Privacy Policy
                     </a>
-                    <a href="#contact" class="text-slate-600 hover:text-penny-600 transition-colors text-sm font-medium">
+                    <a href="contact.html" class="text-slate-600 hover:text-penny-600 transition-colors text-sm font-medium">
                         Contact
                     </a>
                 </div>
@@ -448,6 +493,64 @@
 
             // Show success message
             document.getElementById('successMessage').classList.remove('hidden');
+        });
+
+        // ========================================
+        // SUGGESTION FORM SUBMISSION
+        // ========================================
+        async function saveSuggestion(suggestion, email) {
+            try {
+                // Save to Firestore
+                await db.collection('landing_suggestions').add({
+                    suggestion: suggestion,
+                    email: email || 'Anonymous',
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    userAgent: navigator.userAgent
+                });
+
+                // Also backup to localStorage
+                const suggestions = JSON.parse(localStorage.getItem('penny_suggestions') || '[]');
+                suggestions.push({
+                    suggestion: suggestion,
+                    email: email || 'Anonymous',
+                    timestamp: new Date().toISOString()
+                });
+                localStorage.setItem('penny_suggestions', JSON.stringify(suggestions));
+
+                return true;
+            } catch (error) {
+                console.error('Error saving suggestion:', error);
+                // Fallback to localStorage only
+                const suggestions = JSON.parse(localStorage.getItem('penny_suggestions') || '[]');
+                suggestions.push({
+                    suggestion: suggestion,
+                    email: email || 'Anonymous',
+                    timestamp: new Date().toISOString()
+                });
+                localStorage.setItem('penny_suggestions', JSON.stringify(suggestions));
+                return true;
+            }
+        }
+
+        document.getElementById('suggestionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const suggestion = document.getElementById('suggestionText').value;
+            const email = document.getElementById('suggestionEmail').value;
+
+            // Save to Firestore and localStorage
+            const saved = await saveSuggestion(suggestion, email);
+
+            // Reset form
+            document.getElementById('suggestionForm').reset();
+
+            // Show success message
+            document.getElementById('suggestionSuccessMessage').classList.remove('hidden');
+
+            // Hide success message after 3 seconds
+            setTimeout(() => {
+                document.getElementById('suggestionSuccessMessage').classList.add('hidden');
+            }, 3000);
         });
 
         // Smooth scroll for anchor links
