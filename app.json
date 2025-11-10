@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Penny",
-    "slug": "penny",
+    "slug": "expense-monitor",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
