@@ -161,6 +161,15 @@
                 <div class="flex items-center gap-3">
                     <span class="text-sm text-slate-600" id="adminEmail"></span>
                     <button
+                        id="refreshBtn"
+                        class="p-2 text-slate-600 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
+                        title="Refresh Data"
+                    >
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                    </button>
+                    <button
                         id="settingsBtn"
                         class="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
                         title="Settings"
@@ -509,6 +518,50 @@
                 errorDiv.classList.remove('hidden');
             }
         });
+
+        // ========================================
+        // REFRESH DATA
+        // ========================================
+        document.getElementById('refreshBtn').addEventListener('click', async function() {
+            const button = this;
+            const svg = button.querySelector('svg');
+
+            // Add spinning animation
+            svg.style.animation = 'spin 1s linear infinite';
+            button.disabled = true;
+            button.classList.add('opacity-50', 'cursor-not-allowed');
+
+            try {
+                // Reload all dashboard data
+                await loadDashboardData();
+
+                // Show success feedback
+                button.classList.remove('text-slate-600');
+                button.classList.add('text-teal-600');
+                setTimeout(() => {
+                    button.classList.remove('text-teal-600');
+                    button.classList.add('text-slate-600');
+                }, 1000);
+            } catch (error) {
+                console.error('Error refreshing data:', error);
+                alert('Error refreshing data. Please try again.');
+            } finally {
+                // Remove spinning animation
+                svg.style.animation = '';
+                button.disabled = false;
+                button.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        });
+
+        // Add CSS animation for spinning
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes spin {
+                from { transform: rotate(0deg); }
+                to { transform: rotate(360deg); }
+            }
+        `;
+        document.head.appendChild(style);
 
         // ========================================
         // LOGOUT

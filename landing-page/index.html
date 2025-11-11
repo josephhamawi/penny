@@ -422,13 +422,18 @@
                 // Fetch geolocation data from IPWHO.org (free, unlimited, HTTPS)
                 let geoData = null;
                 try {
+                    console.log('Fetching geolocation data...');
                     const geoResponse = await fetch('https://api.ipwho.org/', {
                         method: 'GET',
                         headers: { 'Accept': 'application/json' }
                     });
 
+                    console.log('Geolocation response status:', geoResponse.status);
+
                     if (geoResponse.ok) {
                         const data = await geoResponse.json();
+                        console.log('Geolocation data received:', data);
+
                         if (data.success) {
                             geoData = {
                                 ip: data.ip,
@@ -457,10 +462,15 @@
                                 flag: data.flag?.emoji,
                                 callingCode: data.calling_code
                             };
+                            console.log('✓ Geolocation parsed successfully');
+                        } else {
+                            console.warn('Geolocation API returned success=false:', data.message);
                         }
+                    } else {
+                        console.warn('Geolocation API response not OK:', geoResponse.status);
                     }
                 } catch (geoError) {
-                    console.warn('Geolocation API unavailable:', geoError);
+                    console.error('Geolocation API error:', geoError);
                 }
 
                 // Build visitor data object
