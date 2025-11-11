@@ -186,25 +186,30 @@ export const batchSyncToSheets = async (expenses) => {
     const webhookUrl = await getWebhookUrl();
 
     if (!webhookUrl) {
+      console.log('[GoogleSheets] No webhook URL configured, skipping sync');
       return { success: true, skipped: true };
     }
+
+    console.log(`[GoogleSheets] Starting batch sync of ${expenses.length} expenses`);
 
     const data = {
       action: 'batch',
       expenses: expenses.map(expense => ({
-        ref: expense.ref,
+        ref: expense.ref || 0,
         date: formatDateForSheets(expense.date),
-        description: expense.description,
-        category: expense.category,
-        in: expense.inAmount || 0,
-        out: expense.outAmount || 0,
-        balance: expense.balance || 0
+        description: expense.description || '',
+        category: expense.category || 'Other',
+        in: parseFloat(expense.inAmount) || 0,
+        out: parseFloat(expense.outAmount) || 0,
+        balance: parseFloat(expense.balance) || 0
       }))
     };
 
-    // Add timeout to fetch request
+    console.log('[GoogleSheets] Sending data:', JSON.stringify(data).substring(0, 200) + '...');
+
+    // Add timeout to fetch request - increased to 30 seconds for large datasets
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
     const response = await fetch(webhookUrl, {
       method: 'POST',
@@ -217,17 +222,22 @@ export const batchSyncToSheets = async (expenses) => {
 
     clearTimeout(timeoutId);
 
+    console.log('[GoogleSheets] Response status:', response.status);
+
     if (!response.ok) {
-      // Silent fail - sync failure shouldn't break the app
-      return { success: false, error: `HTTP ${response.status}` };
+      const errorText = await response.text();
+      console.error('[GoogleSheets] Sync failed:', response.status, errorText);
+      return { success: false, error: `HTTP ${response.status}: ${errorText}` };
     }
 
     const result = await response.json();
+    console.log('[GoogleSheets] Sync successful:', result);
     return { success: true, result };
   } catch (error) {
-    // Silently fail - sync is optional, main data is already in Firebase
+    // Log the error for debugging
+    console.error('[GoogleSheets] Sync error:', error.name, error.message);
     if (error.name === 'AbortError') {
-      return { success: false, error: 'Timeout' };
+      return { success: false, error: 'Timeout - sync took longer than 30 seconds' };
     }
     return { success: false, error: error.message };
   }

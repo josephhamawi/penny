@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Penny - Your AI for Smarter Spending</title>
 
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -396,42 +401,101 @@
         const db = firebase.firestore();
 
         // ========================================
-        // VISITOR TRACKING
+        // VISITOR TRACKING WITH IP GEOLOCATION
         // ========================================
         async function trackVisitor() {
             try {
-                // Track in Firestore (separate collection for landing page)
-                await db.collection('landing_visitors').add({
+                // Generate or retrieve session ID
+                let sessionId = sessionStorage.getItem('penny_session_id');
+                if (!sessionId) {
+                    sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    sessionStorage.setItem('penny_session_id', sessionId);
+                }
+
+                // Check if this session was already tracked
+                const alreadyTracked = sessionStorage.getItem('penny_visit_tracked');
+                if (alreadyTracked === 'true') {
+                    console.log('Visitor already tracked in this session');
+                    return;
+                }
+
+                // Fetch geolocation data from IPWHO.org (free, unlimited, HTTPS)
+                let geoData = null;
+                try {
+                    const geoResponse = await fetch('https://api.ipwho.org/', {
+                        method: 'GET',
+                        headers: { 'Accept': 'application/json' }
+                    });
+
+                    if (geoResponse.ok) {
+                        const data = await geoResponse.json();
+                        if (data.success) {
+                            geoData = {
+                                ip: data.ip,
+                                country: data.country,
+                                countryCode: data.country_code,
+                                region: data.region,
+                                city: data.city,
+                                postal: data.postal,
+                                coordinates: {
+                                    latitude: data.latitude,
+                                    longitude: data.longitude
+                                },
+                                timezone: {
+                                    id: data.timezone?.id,
+                                    abbr: data.timezone?.abbr,
+                                    offset: data.timezone?.utc,
+                                    currentTime: data.timezone?.current_time
+                                },
+                                currency: data.currency?.code,
+                                connection: {
+                                    isp: data.connection?.isp,
+                                    org: data.connection?.org,
+                                    asn: data.connection?.asn
+                                },
+                                isEU: data.is_eu,
+                                flag: data.flag?.emoji,
+                                callingCode: data.calling_code
+                            };
+                        }
+                    }
+                } catch (geoError) {
+                    console.warn('Geolocation API unavailable:', geoError);
+                }
+
+                // Build visitor data object
+                const visitorData = {
+                    sessionId: sessionId,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                     userAgent: navigator.userAgent,
                     referrer: document.referrer || 'Direct',
-                    page: window.location.pathname
-                });
+                    page: window.location.pathname,
+                    screenResolution: `${window.screen.width}x${window.screen.height}`,
+                    viewport: `${window.innerWidth}x${window.innerHeight}`,
+                    language: navigator.language,
+                    platform: navigator.platform,
+                    lastVisit: firebase.firestore.FieldValue.serverTimestamp()
+                };
 
-                // Also keep localStorage backup for offline
-                const visits = JSON.parse(localStorage.getItem('penny_visits') || '[]');
-                visits.push({
-                    timestamp: new Date().toISOString(),
-                    userAgent: navigator.userAgent,
-                    referrer: document.referrer || 'Direct'
-                });
-                localStorage.setItem('penny_visits', JSON.stringify(visits));
+                // Add geolocation if available
+                if (geoData) {
+                    visitorData.geolocation = geoData;
+                }
 
-                const count = parseInt(localStorage.getItem('penny_visitor_count') || '0');
-                localStorage.setItem('penny_visitor_count', (count + 1).toString());
+                // Track in Firestore
+                await db.collection('landing_visitors').doc(sessionId).set(visitorData);
+
+                // Mark as tracked
+                sessionStorage.setItem('penny_visit_tracked', 'true');
+
+                console.log('✓ Visitor tracked:', sessionId);
+                if (geoData) {
+                    console.log(`  Location: ${geoData.city}, ${geoData.region}, ${geoData.country} ${geoData.flag}`);
+                    console.log(`  IP: ${geoData.ip}`);
+                }
+
             } catch (error) {
                 console.error('Error tracking visitor:', error);
-                // Fallback to localStorage only
-                const visits = JSON.parse(localStorage.getItem('penny_visits') || '[]');
-                visits.push({
-                    timestamp: new Date().toISOString(),
-                    userAgent: navigator.userAgent,
-                    referrer: document.referrer || 'Direct'
-                });
-                localStorage.setItem('penny_visits', JSON.stringify(visits));
-
-                const count = parseInt(localStorage.getItem('penny_visitor_count') || '0');
-                localStorage.setItem('penny_visitor_count', (count + 1).toString());
             }
         }
 

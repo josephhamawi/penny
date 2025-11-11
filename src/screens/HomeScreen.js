@@ -19,6 +19,7 @@ import { useSubscription } from '../hooks/useSubscription';
 import PremiumBadge from '../components/PremiumBadge';
 import LockedFeatureCard from '../components/LockedFeatureCard';
 import { colors, shadows, typography } from '../theme/colors';
+import { startSheetPolling } from '../services/sheetPollingService';
 
 const HomeScreen = ({ navigation }) => {
   const [expenses, setExpenses] = useState([]);
@@ -30,6 +31,8 @@ const HomeScreen = ({ navigation }) => {
 
   useEffect(() => {
     loadBudget();
+    // Start sheet polling for two-way sync
+    startSheetPolling();
   }, []);
 
   useEffect(() => {

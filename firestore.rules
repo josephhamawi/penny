@@ -80,13 +80,25 @@ service cloud.firestore {
     // Landing Page Collections (separate from app data)
     // Visitors collection - allow anyone to write (for tracking), only admin to read
     match /landing_visitors/{visitorId} {
-      allow create: if true; // Anyone can add visitor tracking
-      allow read, update, delete: if request.auth != null; // Only authenticated admin can read
+      allow create, update: if true; // Anyone can add/update visitor tracking
+      allow read, delete: if request.auth != null; // Only authenticated admin can read
     }
 
     // Waitlist collection - allow anyone to write, only admin to read
     match /landing_waitlist/{emailId} {
       allow create: if true; // Anyone can signup
+      allow read, update, delete: if request.auth != null; // Only authenticated admin can read
+    }
+
+    // Suggestions collection - allow anyone to write, only admin to read
+    match /landing_suggestions/{suggestionId} {
+      allow create: if true; // Anyone can submit suggestions
+      allow read, update, delete: if request.auth != null; // Only authenticated admin can read
+    }
+
+    // Contact messages collection - allow anyone to write, only admin to read
+    match /landing_contact_messages/{messageId} {
+      allow create: if true; // Anyone can submit contact messages
       allow read, update, delete: if request.auth != null; // Only authenticated admin can read
     }
 

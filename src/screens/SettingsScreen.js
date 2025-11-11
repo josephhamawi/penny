@@ -22,6 +22,10 @@ import {
   clearWebhookUrl
 } from '../services/googleSheetsSyncService';
 import {
+  startSheetPolling,
+  enablePolling
+} from '../services/sheetPollingService';
+import {
   saveMonthlyBudget,
   getMonthlyBudget,
   resetMonthlyBudget
@@ -320,62 +324,94 @@ const SettingsScreen = ({ navigation }) => {
       const isSheetUrl = url.includes('docs.google.com/spreadsheets');
       const isWebhookUrl = url.includes('script.google.com/macros');
 
-      // Step 1: Import from Google Sheets (if it's a sheet URL)
+      let importCount = 0;
+      let exportCount = 0;
+
+      // STEP 1: Import from Google Sheets (if it's a sheet URL)
       if (isSheetUrl) {
         Toast.show({
           type: 'info',
-          text1: 'Importing...',
+          text1: '📥 Importing...',
           text2: 'Fetching data from Google Sheets',
           position: 'bottom',
           autoHide: false,
         });
 
-        const count = await importFromGoogleSheets(url, databaseId);
+        importCount = await importFromGoogleSheets(url, databaseId);
 
-        Toast.hide();
-        Toast.show({
-          type: 'success',
-          text1: 'Import Complete!',
-          text2: `Imported ${count} expense${count !== 1 ? 's' : ''}`,
-          position: 'bottom',
-          visibilityTime: 2000,
-        });
+        console.log(`[Sync] Imported ${importCount} expenses from Google Sheets`);
 
-        // Wait a moment before exporting
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Wait a moment for Firebase to process
+        await new Promise(resolve => setTimeout(resolve, 1500));
       }
 
-      // Step 2: Export to Google Sheets (if it's a webhook URL)
+      // STEP 2: Export to Google Sheets (if it's a webhook URL)
       if (isWebhookUrl) {
         Toast.show({
           type: 'info',
-          text1: 'Exporting...',
+          text1: '📤 Exporting...',
           text2: 'Pushing all expenses to Google Sheets',
           position: 'bottom',
           autoHide: false,
         });
 
-        await manualSyncToSheets(databaseId);
+        const syncResult = await manualSyncToSheets(databaseId);
+        exportCount = syncResult?.result?.count || 0;
+
+        console.log(`[Sync] Exported ${exportCount} expenses to Google Sheets`);
 
         Toast.hide();
-        Toast.show({
-          type: 'success',
-          text1: 'Export Complete!',
-          text2: 'All expenses synced to Google Sheets',
-          position: 'bottom',
-        });
-      } else if (!isSheetUrl) {
-        // Neither format recognized
-        Toast.hide();
-        Toast.show({
-          type: 'error',
-          text1: 'Invalid URL',
-          text2: 'Please use a Google Sheets or webhook URL',
-          position: 'bottom',
-        });
+
+        if (!syncResult || !syncResult.success || syncResult.skipped) {
+          const errorMsg = syncResult?.error || 'Unknown error';
+          throw new Error(errorMsg);
+        }
       }
+
+      // STEP 3: Show final success message
+      Toast.hide();
+
+      let successMessage = '';
+      if (isSheetUrl && isWebhookUrl) {
+        // Full two-way sync
+        successMessage = `✓ Two-Way Sync Complete!\nImported ${importCount}, Exported ${exportCount} expenses`;
+      } else if (isSheetUrl) {
+        // Import only
+        successMessage = `✓ Import Complete! ${importCount} expenses imported`;
+      } else if (isWebhookUrl) {
+        // Export only
+        successMessage = `✓ Export Complete! ${exportCount} expenses synced`;
+      }
+
+      Toast.show({
+        type: 'success',
+        text1: 'Sync Successful',
+        text2: successMessage,
+        position: 'bottom',
+        visibilityTime: 4000,
+      });
+
+      // Enable automatic polling for sheet-to-app sync
+      if (isSheetUrl) {
+        await enablePolling();
+        console.log('[Sync] Polling enabled for sheet-to-app sync');
+      }
+
+      // Show info about automatic sync
+      setTimeout(() => {
+        Toast.show({
+          type: 'info',
+          text1: '🔄 Auto-Sync Enabled',
+          text2: isSheetUrl
+            ? 'Two-way sync active: App ↔ Sheet'
+            : 'One-way sync active: App → Sheet',
+          position: 'bottom',
+          visibilityTime: 3000,
+        });
+      }, 4500);
+
     } catch (error) {
-      console.error('Manual sync error:', error);
+      console.error('[Sync] Manual sync error:', error);
       Toast.hide();
       Toast.show({
         type: 'error',
@@ -672,13 +708,21 @@ const SettingsScreen = ({ navigation }) => {
                     <>
                       <Icon name="sync-alt" size={18} color={colors.text.primary} />
                       <Text style={[styles.buttonText, { marginLeft: 8 }]}>
-                        Sync Bidirectionally
+                        Sync Now (Import & Export)
                       </Text>
                     </>
                   )}
                 </LinearGradient>
               </TouchableOpacity>
             )}
+            <TouchableOpacity
+              style={styles.linkButton}
+              onPress={handleViewInstructions}
+            >
+              <Text style={styles.linkText}>
+                ℹ️ After sync, changes will automatically update between app and sheet
+              </Text>
+            </TouchableOpacity>
             <TouchableOpacity
               style={styles.linkButton}
               onPress={handleViewInstructions}

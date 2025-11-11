@@ -215,20 +215,40 @@ export const getAllExpenses = async (userId) => {
 // Sync all expenses to Google Sheets
 const syncAllExpensesToSheets = async (userId) => {
   try {
+    console.log('[ExpenseService] Starting sync to Google Sheets for user:', userId);
     const expenses = await getAllExpenses(userId);
+    console.log(`[ExpenseService] Retrieved ${expenses.length} expenses for sync`);
 
     if (expenses.length > 0) {
       // Reverse back to chronological order (oldest first) for Google Sheets
       const sortedExpenses = [...expenses].reverse();
-      await batchSyncToSheets(sortedExpenses);
+      console.log('[ExpenseService] Expenses sorted chronologically (oldest first)');
+      console.log('[ExpenseService] First expense:', sortedExpenses[0]?.description, sortedExpenses[0]?.date);
+      console.log('[ExpenseService] Last expense:', sortedExpenses[sortedExpenses.length - 1]?.description, sortedExpenses[sortedExpenses.length - 1]?.date);
+
+      const result = await batchSyncToSheets(sortedExpenses);
+
+      if (result.success && !result.skipped) {
+        console.log('[ExpenseService] ✓ Sync to Google Sheets completed successfully');
+      } else if (result.skipped) {
+        console.log('[ExpenseService] ⊘ Sync skipped (no webhook configured)');
+      } else {
+        console.error('[ExpenseService] ✗ Sync to Google Sheets failed:', result.error);
+      }
+
+      return result;
+    } else {
+      console.log('[ExpenseService] No expenses to sync');
+      return { success: true, count: 0 };
     }
   } catch (error) {
-    console.error('Error syncing to Google Sheets:', error);
+    console.error('[ExpenseService] Error syncing to Google Sheets:', error);
     // Don't throw - we don't want to block the main operation if sync fails
+    return { success: false, error: error.message };
   }
 };
 
 // Export manual sync function for Settings screen
 export const manualSyncToSheets = async (userId) => {
-  await syncAllExpensesToSheets(userId);
+  return await syncAllExpensesToSheets(userId);
 };

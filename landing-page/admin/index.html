@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Penny Admin - Waitlist Dashboard</title>
 
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="shortcut icon" href="/favicon.ico">
+
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -328,12 +333,14 @@
                                 <th class="text-left py-3 px-4 text-sm font-semibold text-slate-700">#</th>
                                 <th class="text-left py-3 px-4 text-sm font-semibold text-slate-700">Date</th>
                                 <th class="text-left py-3 px-4 text-sm font-semibold text-slate-700">Time</th>
+                                <th class="text-left py-3 px-4 text-sm font-semibold text-slate-700">Location</th>
+                                <th class="text-left py-3 px-4 text-sm font-semibold text-slate-700">IP Address</th>
                                 <th class="text-left py-3 px-4 text-sm font-semibold text-slate-700">Referrer</th>
                             </tr>
                         </thead>
                         <tbody id="visitorTableBody">
                             <tr>
-                                <td colspan="4" class="text-center py-8 text-slate-500">Loading...</td>
+                                <td colspan="6" class="text-center py-8 text-slate-500">Loading...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -719,23 +726,40 @@
             }).join('');
         }
 
+        let allVisitors = [];
+        let visibleVisitorCount = 10;
+
         function populateVisitorTable(visitorsSnapshot) {
             const tbody = document.getElementById('visitorTableBody');
-            const visitors = [];
+            allVisitors = [];
 
             visitorsSnapshot.forEach((doc) => {
-                visitors.push(doc.data());
+                const data = doc.data();
+                allVisitors.push(data);
             });
 
-            if (visitors.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center py-8 text-slate-500">No visitors yet</td></tr>';
+            if (allVisitors.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-slate-500">No visitors yet</td></tr>';
                 return;
             }
 
-            // Show only last 50 visits
-            const recentVisits = visitors.slice(-50).reverse();
+            // Sort by timestamp (most recent first)
+            allVisitors.sort((a, b) => {
+                const timeA = a.timestamp && a.timestamp.toDate ? a.timestamp.toDate().getTime() : 0;
+                const timeB = b.timestamp && b.timestamp.toDate ? b.timestamp.toDate().getTime() : 0;
+                return timeB - timeA; // Descending order (newest first)
+            });
 
-            tbody.innerHTML = recentVisits.map((visit, index) => {
+            // Reset visible count when data refreshes
+            visibleVisitorCount = 10;
+            renderVisitorRows();
+        }
+
+        function renderVisitorRows() {
+            const tbody = document.getElementById('visitorTableBody');
+            const visibleVisitors = allVisitors.slice(0, visibleVisitorCount);
+
+            tbody.innerHTML = visibleVisitors.map((visit, index) => {
                 const timestamp = visit.timestamp;
                 let date;
 
@@ -745,15 +769,46 @@
                     date = new Date();
                 }
 
+                // Extract geolocation data
+                const geo = visit.geolocation || {};
+                const location = geo.city && geo.country
+                    ? `${geo.flag || ''} ${geo.city}, ${geo.country}`.trim()
+                    : (geo.country ? `${geo.flag || ''} ${geo.country}`.trim() : 'Unknown');
+                const ip = geo.ip || 'N/A';
+
                 return `
                     <tr class="border-b border-slate-100 hover:bg-slate-50">
                         <td class="py-3 px-4 text-sm text-slate-600">${index + 1}</td>
                         <td class="py-3 px-4 text-sm text-slate-600">${date.toLocaleDateString()}</td>
                         <td class="py-3 px-4 text-sm text-slate-600">${date.toLocaleTimeString()}</td>
+                        <td class="py-3 px-4 text-sm text-slate-700 font-medium">${location}</td>
+                        <td class="py-3 px-4 text-sm text-slate-600 font-mono">${ip}</td>
                         <td class="py-3 px-4 text-sm text-slate-600">${visit.referrer || 'Direct'}</td>
                     </tr>
                 `;
             }).join('');
+
+            // Add "Load More" button if there are more visitors
+            if (visibleVisitorCount < allVisitors.length) {
+                const remainingCount = allVisitors.length - visibleVisitorCount;
+                tbody.innerHTML += `
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            <button
+                                onclick="loadMoreVisitors()"
+                                class="px-6 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors font-medium text-sm"
+                            >
+                                Load More (${remainingCount} remaining)
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function loadMoreVisitors() {
+            visibleVisitorCount += 10;
+            renderVisitorRows();
         }
 
         // ========================================
