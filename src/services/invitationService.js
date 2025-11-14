@@ -13,6 +13,7 @@ import {
   Timestamp
 } from 'firebase/firestore';
 import { db, auth } from '../config/firebase';
+import { generateUniqueCollabCode } from './collabCodeService';
 
 /**
  * Invitation Service
@@ -38,20 +39,41 @@ export const initializeUserProfile = async (userId, email, displayName) => {
     const existingProfile = await getDoc(userRef);
 
     if (existingProfile.exists()) {
-      // Profile exists, just update the display name if provided
-      if (displayName) {
+      const userData = existingProfile.data();
+
+      // Check if user needs a collab code (migration scenario)
+      const updates = {};
+
+      if (!userData.collabCode) {
+        // Generate collab code for existing user without one
+        const collabCode = await generateUniqueCollabCode();
+        updates.collabCode = collabCode;
+        console.log(`Generated collab code for existing user ${userId}: ${collabCode}`);
+      }
+
+      if (displayName && displayName !== userData.displayName) {
+        updates.displayName = displayName;
+      }
+
+      // Update if there are any changes
+      if (Object.keys(updates).length > 0) {
         await updateDoc(userRef, {
-          displayName: displayName,
+          ...updates,
           updatedAt: serverTimestamp(),
         });
       }
+
       return { success: true, existed: true };
     }
 
-    // Create new profile
+    // Create new profile with collab code
+    const collabCode = await generateUniqueCollabCode();
+    console.log(`Generated collab code for new user ${userId}: ${collabCode}`);
+
     await setDoc(userRef, {
       email: email.toLowerCase(),
       displayName: displayName || email.split('@')[0],
+      collabCode: collabCode,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });

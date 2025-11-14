@@ -117,9 +117,249 @@
         .gradient-bg {
             background: linear-gradient(135deg, #f0fdf9 0%, #fefce8 50%, #f8fafc 100%);
         }
+
+        /* Floating Header Styles */
+        .floating-header {
+            transition: all 0.3s ease-in-out;
+            backdrop-filter: blur(0px);
+            background: transparent;
+        }
+
+        .floating-header.scrolled {
+            backdrop-filter: blur(20px);
+            background: rgba(15, 23, 42, 0.85);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Navigation pill container */
+        .nav-pill-container {
+            background: rgba(51, 65, 85, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 50px;
+            padding: 8px 12px;
+            border: 1px solid rgba(100, 116, 139, 0.3);
+        }
+
+        .nav-link {
+            position: relative;
+            transition: color 0.3s ease;
+            padding: 10px 20px;
+            border-radius: 25px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 2;
+        }
+
+        .nav-link:hover {
+            color: white;
+        }
+
+        .nav-link.active {
+            color: #14d4cc;
+        }
+
+        /* Sliding indicator background */
+        .nav-indicator {
+            position: absolute;
+            background: rgba(20, 212, 204, 0.3);
+            border-radius: 25px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .nav-indicator-blog {
+            position: absolute;
+            background: rgba(20, 212, 204, 0.3);
+            border-radius: 50px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0;
+            inset: 0;
+        }
+
+        .nav-link-blog:hover .nav-indicator-blog {
+            opacity: 1;
+        }
+
+        /* User profile section */
+        .user-profile {
+            background: rgba(51, 65, 85, 0.5);
+            backdrop-filter: blur(10px);
+            border-radius: 50px;
+            padding: 10px 24px;
+            border: 1px solid rgba(100, 116, 139, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .user-profile:hover {
+            background: rgba(51, 65, 85, 0.7);
+            border-color: rgba(20, 212, 204, 0.4);
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid rgba(20, 212, 204, 0.5);
+        }
+
+        .user-name {
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Toast Notification Styles */
+        .toast-container {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 16px 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            min-width: 300px;
+            max-width: 400px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            pointer-events: auto;
+            animation: slideInRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s ease;
+        }
+
+        .toast.toast-exit {
+            animation: slideOutRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            transform: translateX(100%);
+        }
+
+        .toast-icon {
+            width: 24px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: #1e293b;
+            margin-bottom: 2px;
+        }
+
+        .toast-message {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .toast-close {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            color: #64748b;
+        }
+
+        .toast-close:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        /* Toast Types */
+        .toast.toast-success {
+            border-left: 4px solid #10b981;
+        }
+
+        .toast.toast-error {
+            border-left: 4px solid #ef4444;
+        }
+
+        .toast.toast-warning {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .toast.toast-info {
+            border-left: 4px solid #14d4cc;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes slideOutRight {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
     </style>
 </head>
 <body class="gradient-bg">
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Floating Header -->
+    <header class="floating-header fixed top-0 left-0 right-0 z-50">
+        <nav class="max-w-7xl mx-auto px-6 py-3">
+            <div class="flex items-center justify-between">
+                <!-- Logo -->
+                <a href="#" class="flex items-center gap-2 transition-transform hover:scale-105">
+                    <img src="piglogo.png" alt="Penny Logo" class="h-10">
+                </a>
+
+                <!-- Center Navigation Pill -->
+                <div class="hidden md:flex nav-pill-container" style="position: relative;">
+                    <div class="nav-indicator"></div>
+                    <a href="#home" class="nav-link active" data-nav="home">Home</a>
+                    <a href="#about" class="nav-link" data-nav="about">About Us</a>
+                    <a href="#pricing" class="nav-link" data-nav="pricing">Pricing</a>
+                    <a href="contact.html" class="nav-link" data-nav="contact">Contact</a>
+                </div>
+
+                <!-- Blog Button -->
+                <a href="#" onclick="alert('Blog coming soon! Stay tuned for financial tips and insights.'); return false;" class="hidden md:flex user-profile cursor-pointer nav-link-blog" data-nav="blog" style="position: relative;">
+                    <div class="nav-indicator-blog"></div>
+                    <span class="user-name" style="position: relative; z-index: 2;">Blog</span>
+                </a>
+            </div>
+        </nav>
+    </header>
 
     <!-- Hero Section -->
     <section class="min-h-screen flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden">
@@ -303,6 +543,206 @@
             <p class="text-sm text-slate-500 mt-4">
                 We respect your privacy. No spam, ever.
             </p>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section id="pricing" class="py-20 px-4 bg-gradient-to-br from-slate-900 to-slate-800 relative overflow-hidden">
+        <!-- Decorative elements -->
+        <div class="absolute top-20 right-20 w-96 h-96 bg-penny-500 rounded-full mix-blend-overlay filter blur-3xl opacity-10 animate-pulse"></div>
+        <div class="absolute bottom-20 left-20 w-96 h-96 bg-gold-400 rounded-full mix-blend-overlay filter blur-3xl opacity-10 animate-pulse" style="animation-delay: 2s;"></div>
+
+        <div class="max-w-6xl mx-auto relative z-10">
+            <!-- Section Header -->
+            <div class="text-center mb-16">
+                <h2 class="text-5xl font-bold text-white mb-4">Simple, Transparent Pricing</h2>
+                <p class="text-xl text-slate-300 max-w-2xl mx-auto">
+                    Choose the plan that works best for you. Get full access to AI-powered insights and save smarter.
+                </p>
+            </div>
+
+            <!-- Pricing Cards -->
+            <div class="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+                <!-- Free Plan -->
+                <div class="glass-card rounded-3xl p-8 relative bg-white/5 backdrop-filter backdrop-blur-xl border border-white/10 hover:bg-white/10 transition-all duration-300">
+                    <div class="mb-6">
+                        <h3 class="text-2xl font-bold text-white mb-2">Free</h3>
+                        <p class="text-slate-400 text-sm">Essential expense tracking</p>
+                    </div>
+
+                    <div class="mb-6">
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-5xl font-bold text-white">$0</span>
+                            <span class="text-slate-400">/forever</span>
+                        </div>
+                        <p class="text-slate-500 text-sm mt-2 font-medium">No credit card required</p>
+                    </div>
+
+                    <ul class="space-y-4 mb-8">
+                        <li class="flex items-start gap-3 text-slate-300">
+                            <svg class="w-6 h-6 text-slate-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>Track unlimited expenses</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-slate-300">
+                            <svg class="w-6 h-6 text-slate-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>Google Sheets sync</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-slate-300">
+                            <svg class="w-6 h-6 text-slate-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>Basic categorization</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-slate-300">
+                            <svg class="w-6 h-6 text-slate-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>Monthly budget tracking</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-slate-500">
+                            <svg class="w-6 h-6 text-slate-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                            <span>No AI features</span>
+                        </li>
+                    </ul>
+
+                    <button class="w-full bg-slate-700 text-white font-semibold py-4 rounded-full hover:bg-slate-600 transition-all duration-300">
+                        Get Started Free
+                    </button>
+                </div>
+
+                <!-- Premium Monthly Plan -->
+                <div class="glass-card rounded-3xl p-8 relative bg-gradient-to-br from-penny-500/20 to-gold-500/20 backdrop-filter backdrop-blur-xl border-2 border-penny-400/50 hover:border-penny-400 transition-all duration-300 hover:scale-105">
+                    <!-- Popular Badge -->
+                    <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                        <span class="bg-gradient-to-r from-penny-500 to-gold-500 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg">
+                            MOST POPULAR
+                        </span>
+                    </div>
+
+                    <div class="mb-6 mt-2">
+                        <h3 class="text-2xl font-bold text-white mb-2">Premium</h3>
+                        <p class="text-slate-300 text-sm">AI-powered insights</p>
+                    </div>
+
+                    <div class="mb-6">
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-5xl font-bold text-white">$4.99</span>
+                            <span class="text-slate-300">/month</span>
+                        </div>
+                        <p class="text-penny-300 text-sm mt-2 font-medium">✨ 14-day free trial included</p>
+                    </div>
+
+                    <ul class="space-y-4 mb-8">
+                        <li class="flex items-start gap-3 text-white">
+                            <svg class="w-6 h-6 text-penny-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span><strong>Everything in Free</strong></span>
+                        </li>
+                        <li class="flex items-start gap-3 text-white">
+                            <svg class="w-6 h-6 text-penny-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>AI-Powered Saving Goals</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-white">
+                            <svg class="w-6 h-6 text-penny-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>Monthly Expense Personality Reports</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-white">
+                            <svg class="w-6 h-6 text-penny-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>Smart recommendations</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-white">
+                            <svg class="w-6 h-6 text-penny-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>Cancel anytime</span>
+                        </li>
+                    </ul>
+
+                    <button class="w-full bg-gradient-to-r from-penny-500 to-penny-600 text-white font-semibold py-4 rounded-full hover:shadow-2xl hover:shadow-penny-500/50 transition-all duration-300 hover:scale-105">
+                        Start Free Trial
+                    </button>
+                </div>
+
+                <!-- Lifetime Plan -->
+                <div class="glass-card rounded-3xl p-8 relative bg-white/5 backdrop-filter backdrop-blur-xl border border-gold-400/30 hover:border-gold-400 transition-all duration-300 hover:scale-105">
+                    <!-- Best Value Badge -->
+                    <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                        <span class="bg-gradient-to-r from-gold-500 to-gold-400 text-slate-900 text-xs font-bold px-4 py-2 rounded-full shadow-lg">
+                            BEST VALUE
+                        </span>
+                    </div>
+
+                    <div class="mb-6 mt-2">
+                        <h3 class="text-2xl font-bold text-white mb-2">Lifetime</h3>
+                        <p class="text-slate-300 text-sm">One-time payment, yours forever</p>
+                    </div>
+
+                    <div class="mb-6">
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-5xl font-bold text-white">$149</span>
+                            <span class="text-slate-300">one-time</span>
+                        </div>
+                        <p class="text-penny-300 text-sm mt-2 font-medium">💎 Pay once, use forever</p>
+                    </div>
+
+                    <ul class="space-y-4 mb-8">
+                        <li class="flex items-start gap-3 text-white">
+                            <svg class="w-6 h-6 text-gold-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span><strong>Everything in Monthly</strong></span>
+                        </li>
+                        <li class="flex items-start gap-3 text-white">
+                            <svg class="w-6 h-6 text-gold-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span><strong>Lifetime access</strong> - never pay again</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-white">
+                            <svg class="w-6 h-6 text-gold-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>All future premium features included</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-white">
+                            <svg class="w-6 h-6 text-gold-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>VIP priority support</span>
+                        </li>
+                        <li class="flex items-start gap-3 text-white">
+                            <svg class="w-6 h-6 text-gold-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>Exclusive diamond badge in-app</span>
+                        </li>
+                    </ul>
+
+                    <button class="w-full bg-gradient-to-r from-gold-500 via-gold-400 to-penny-500 text-slate-900 font-bold py-4 rounded-full hover:shadow-2xl hover:shadow-gold-500/50 transition-all duration-300 hover:scale-105">
+                        Get Lifetime Access
+                    </button>
+                </div>
+            </div>
+
+            <!-- Trust Message -->
+            <div class="text-center mt-12">
+                <p class="text-slate-400 text-sm">
+                    🔒 Secure payment processing • 30-day money-back guarantee • Cancel anytime
+                </p>
+            </div>
         </div>
     </section>
 
@@ -625,6 +1065,76 @@
             setTimeout(() => {
                 document.getElementById('suggestionSuccessMessage').classList.add('hidden');
             }, 3000);
+        });
+
+        // Floating header scroll behavior
+        const header = document.querySelector('.floating-header');
+        let lastScroll = 0;
+
+        window.addEventListener('scroll', () => {
+            const currentScroll = window.pageYOffset;
+
+            // Add 'scrolled' class when scrolled down more than 50px
+            if (currentScroll > 50) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+
+            lastScroll = currentScroll;
+        });
+
+        // Sliding navigation indicator
+        const navLinks = document.querySelectorAll('.nav-link');
+        const indicator = document.querySelector('.nav-indicator');
+        const navContainer = document.querySelector('.nav-pill-container');
+
+        function updateIndicator(link) {
+            if (!link || !indicator || !navContainer) return;
+
+            const containerRect = navContainer.getBoundingClientRect();
+            const linkRect = link.getBoundingClientRect();
+
+            const left = linkRect.left - containerRect.left;
+            const width = linkRect.width;
+            const height = linkRect.height;
+            const top = linkRect.top - containerRect.top;
+
+            indicator.style.left = `${left}px`;
+            indicator.style.top = `${top}px`;
+            indicator.style.width = `${width}px`;
+            indicator.style.height = `${height}px`;
+        }
+
+        // Initialize indicator position on active link
+        const activeLink = document.querySelector('.nav-link.active');
+        if (activeLink) {
+            setTimeout(() => updateIndicator(activeLink), 100);
+        }
+
+        // Update indicator on hover
+        navLinks.forEach(link => {
+            link.addEventListener('mouseenter', () => {
+                updateIndicator(link);
+            });
+        });
+
+        // Return to active link when mouse leaves container
+        if (navContainer) {
+            navContainer.addEventListener('mouseleave', () => {
+                const activeLink = document.querySelector('.nav-link.active');
+                if (activeLink) {
+                    updateIndicator(activeLink);
+                }
+            });
+        }
+
+        // Update on window resize
+        window.addEventListener('resize', () => {
+            const activeLink = document.querySelector('.nav-link.active');
+            if (activeLink) {
+                updateIndicator(activeLink);
+            }
         });
 
         // Smooth scroll for anchor links

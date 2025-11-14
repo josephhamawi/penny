@@ -197,7 +197,7 @@ const PaywallScreen = ({ navigation, route }) => {
               </Text>
             )}
           </View>
-          <Text style={styles.disclaimer}>Best value - save 75%</Text>
+          <Text style={styles.disclaimer}>Best value - pay once, use forever</Text>
         </TouchableOpacity>
       </View>
 

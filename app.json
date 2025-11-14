@@ -4,7 +4,7 @@
     "slug": "expense-monitor",
     "version": "1.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "icon": "./public/newicon.png",
     "adaptiveIcon": {
       "foregroundImage": "./public/newicon.png",
@@ -19,16 +19,17 @@
       }
     },
     "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#2196F3"
+      "backgroundColor": "#0A0E27"
     },
     "ios": {
-      "bundleIdentifier": "com.penny.app",
+      "bundleIdentifier": "com.yourname.penny.expenses",
       "buildNumber": "1.0.0",
       "supportsTablet": true,
+      "backgroundColor": "#0A0E27",
       "infoPlist": {
         "CFBundleDisplayName": "Penny",
+        "UIViewControllerBasedStatusBarAppearance": false,
+        "UIStatusBarStyle": "UIStatusBarStyleLightContent",
         "NSFaceIDUsageDescription": "Allow Penny to use Face ID for secure and quick authentication.",
         "NSPhotoLibraryUsageDescription": "Allow Penny to access your photo library to set your profile picture."
       }
@@ -36,13 +37,14 @@
     "android": {
       "package": "com.penny.app",
       "versionCode": 1,
+      "backgroundColor": "#0A0E27",
       "permissions": [
         "READ_EXTERNAL_STORAGE",
         "WRITE_EXTERNAL_STORAGE"
       ],
       "adaptiveIcon": {
         "foregroundImage": "./public/newicon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#0A0E27"
       },
       "notification": {
         "icon": "./public/newicon.png",
@@ -51,7 +53,8 @@
     },
     "platforms": [
       "ios",
-      "android"
+      "android",
+      "web"
     ],
     "extra": {
       "eas": {

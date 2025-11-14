@@ -17,7 +17,7 @@
 
 ### Goals
 - **Enable multi-user support** with complete data isolation to ensure users can only access their own expense data
-- **Implement premium subscription system** with two tiers: $10/month recurring and $199 lifetime bundle
+- **Implement premium subscription system** with two tiers: $4.99/month recurring and $149.99 lifetime bundle
 - **Deliver AI-Powered Saving Goals Engine** that helps users set, track, and achieve financial goals with predictive analytics
 - **Generate personalized "Expense Personality" reports** that provide engaging, actionable insights based on spending patterns
 - **Achieve 5-10% conversion rate** from free to paid users within first 3 months
@@ -46,7 +46,7 @@ This PRD focuses on three interconnected initiatives: securing user data isolati
 
 **Subscription & In-App Purchase**
 - **FR6:** Implement StoreKit/RevenueCat for iOS in-app purchases
-- **FR7:** Offer two subscription products: Monthly ($10/month auto-renewing) and Lifetime ($199 one-time purchase)
+- **FR7:** Offer two subscription products: Monthly ($4.99/month auto-renewing) and Lifetime ($149.99 one-time purchase)
 - **FR8:** Provide 14-day free trial for monthly subscription
 - **FR9:** Display subscription status throughout the app (active, trial, expired)
 - **FR10:** Lock AI features behind subscription paywall - free users see promotional UI
@@ -193,7 +193,7 @@ Maintain existing modern, clean aesthetic with blue (#1976D2) as primary color. 
 **Goal:** Ensure every user's expense data is completely isolated with proper Firebase Authentication and Firestore security rules, preventing any data leakage between users.
 
 ### Epic 2: In-App Purchase & Subscription Infrastructure
-**Goal:** Implement RevenueCat SDK with StoreKit to enable users to purchase monthly ($10) or lifetime ($199) subscriptions, manage trials, and handle subscription lifecycle events.
+**Goal:** Implement RevenueCat SDK with StoreKit to enable users to purchase monthly ($4.99) or lifetime ($149.99) subscriptions, manage trials, and handle subscription lifecycle events.
 
 ### Epic 3: Premium UI & Paywall Experience
 **Goal:** Design and implement premium-gated UI with diamond indicator for subscribers, paywall modal for non-subscribers, and subscription management screen.
@@ -287,7 +287,7 @@ Maintain existing modern, clean aesthetic with blue (#1976D2) as primary color. 
 
 ## Epic 2: In-App Purchase & Subscription Infrastructure
 
-**Expanded Goal:** Integrate RevenueCat SDK to handle iOS in-app purchases, configure two subscription products (monthly $10 and lifetime $199), implement 14-day free trial for monthly tier, and manage subscription lifecycle (purchase, restore, renewal, expiry) throughout the app.
+**Expanded Goal:** Integrate RevenueCat SDK to handle iOS in-app purchases, configure two subscription products (monthly $4.99 and lifetime $149.99), implement 14-day free trial for monthly tier, and manage subscription lifecycle (purchase, restore, renewal, expiry) throughout the app.
 
 ### Story 2.1: Set Up RevenueCat Account and Configure Products
 
@@ -297,8 +297,8 @@ Maintain existing modern, clean aesthetic with blue (#1976D2) as primary color. 
 
 **Acceptance Criteria:**
 1. RevenueCat account created and linked to App Store Connect
-2. Monthly subscription product created: `expense_monitor_monthly` - $10/month with 14-day trial
-3. Lifetime subscription product created: `expense_monitor_lifetime` - $199 one-time purchase
+2. Monthly subscription product created: `expense_monitor_monthly` - $4.99/month with 14-day trial
+3. Lifetime subscription product created: `expense_monitor_lifetime` - $149.99 one-time purchase
 4. Products configured in RevenueCat dashboard with correct identifiers
 5. Sandbox test accounts set up in App Store Connect for testing
 6. RevenueCat API key obtained and stored securely
@@ -419,8 +419,8 @@ Maintain existing modern, clean aesthetic with blue (#1976D2) as primary color. 
    - "Smart spending recommendations"
    - "Unlimited goal tracking"
 3. Two subscription cards displayed side-by-side or stacked:
-   - **Monthly:** "$10/month" with "Start 14-Day Free Trial" button
-   - **Lifetime:** "$199 one-time" with "Buy Lifetime Access" button
+   - **Monthly:** "$4.99/month" with "Start 14-Day Free Trial" button
+   - **Lifetime:** "$149.99 one-time" with "Buy Lifetime Access" button
 4. "Restore Purchases" link at bottom
 5. "Terms of Service" and "Privacy Policy" links
 6. Close button to dismiss paywall
@@ -468,7 +468,7 @@ Maintain existing modern, clean aesthetic with blue (#1976D2) as primary color. 
    - Current plan name and icon
    - Subscription status (Active, Trial, Expired)
    - Next billing date (or "Lifetime - No Billing")
-   - Amount charged (e.g., "$10.00 per month")
+   - Amount charged (e.g., "$4.99 per month")
 3. "Manage Subscription" button opens iOS Settings → Subscriptions
 4. "Restore Purchases" button (calls restore function)
 5. "Cancel Subscription" button (opens iOS subscription management)

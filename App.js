@@ -12,6 +12,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from './src/theme/colors';
 
 // Screens
+import SplashScreen from './src/screens/SplashScreen';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import HomeScreen from './src/screens/HomeScreen';
@@ -250,11 +251,7 @@ const RootNavigator = () => {
   }, [user]);
 
   if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
+    return <SplashScreen />;
   }
 
   return (

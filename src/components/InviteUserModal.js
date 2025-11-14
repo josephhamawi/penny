@@ -184,7 +184,7 @@ const InviteUserModal = ({ visible, onClose, onSuccess }) => {
                       ) : (
                         <>
                           <Ionicons name="send" size={18} color={colors.text.primary} />
-                          <Text style={styles.inviteButtonText}>Send Invite</Text>
+                          <Text style={styles.inviteButtonText}>Send</Text>
                         </>
                       )}
                     </LinearGradient>
@@ -304,7 +304,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   cancelButton: {
-    flex: 1,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     borderRadius: borderRadius.md,
@@ -313,6 +312,7 @@ const styles = StyleSheet.create({
     borderColor: colors.glass.borderLight,
     justifyContent: 'center',
     alignItems: 'center',
+    minWidth: 100,
   },
   cancelButtonText: {
     ...typography.body,

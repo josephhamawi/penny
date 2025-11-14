@@ -9,7 +9,10 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
-  Image
+  Image,
+  Clipboard,
+  Share,
+  Platform
 } from 'react-native';
 import { FontAwesome5 as Icon } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -31,10 +34,14 @@ import {
   resetMonthlyBudget
 } from '../services/budgetService';
 import { importFromGoogleSheets } from '../services/googleSheetsService';
-import { manualSyncToSheets } from '../services/expenseService';
+import { manualSyncToSheets, clearAllExpenses } from '../services/expenseService';
 import { getUserDatabaseId } from '../services/invitationService';
+import { getUserCollabCode } from '../services/collabCodeService';
+import { deleteAccount } from '../services/accountDeletionService';
 import { formatCurrency } from '../utils/formatNumber';
 import { colors, shadows, typography } from '../theme/colors';
+import firebase, { auth } from '../config/firebase';
+import Constants from 'expo-constants';
 
 const SettingsScreen = ({ navigation }) => {
   const [webhookUrl, setWebhookUrl] = useState('');
@@ -49,11 +56,16 @@ const SettingsScreen = ({ navigation }) => {
   const [editingBudget, setEditingBudget] = useState(false);
   const [savingBudget, setSavingBudget] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [importCancelled, setImportCancelled] = useState(false);
+  const [collabCode, setCollabCode] = useState('');
+  const [loadingCollabCode, setLoadingCollabCode] = useState(true);
+  const [collabCodeError, setCollabCodeError] = useState(false);
   const { user, logout, updateUserProfile } = useAuth();
 
   useEffect(() => {
     loadWebhookUrl();
     loadBudget();
+    loadCollabCode();
     if (user) {
       setDisplayName(user.displayName || '');
       setPhotoURL(user.photoURL || null);
@@ -79,6 +91,57 @@ const SettingsScreen = ({ navigation }) => {
       setMonthlyBudget(budget.toString());
     } catch (error) {
       console.error('Error loading budget:', error);
+    }
+  };
+
+  const loadCollabCode = async () => {
+    if (!user) {
+      setLoadingCollabCode(false);
+      return;
+    }
+
+    try {
+      setLoadingCollabCode(true);
+      setCollabCodeError(false);
+      const code = await getUserCollabCode(user.uid);
+      if (code) {
+        setCollabCode(code);
+      } else {
+        setCollabCodeError(true);
+      }
+    } catch (error) {
+      console.error('Error loading collab code:', error);
+      setCollabCodeError(true);
+    } finally {
+      setLoadingCollabCode(false);
+    }
+  };
+
+  const handleCopyCollabCode = () => {
+    Clipboard.setString(collabCode);
+    Toast.show({
+      type: 'success',
+      text1: 'Code copied!',
+      text2: 'Your collab code has been copied to clipboard',
+      position: 'bottom',
+      visibilityTime: 2000,
+    });
+  };
+
+  const handleShareCollabCode = async () => {
+    try {
+      await Share.share({
+        message: `Collaborate with me on Penny! My code: ${collabCode}`,
+        title: 'My Penny Collab Code',
+      });
+    } catch (error) {
+      console.error('Error sharing collab code:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Share failed',
+        text2: 'Unable to share collab code',
+        position: 'bottom',
+      });
     }
   };
 
@@ -314,6 +377,7 @@ const SettingsScreen = ({ navigation }) => {
       return;
     }
 
+    setImportCancelled(false);
     setSyncing(true);
 
     try {
@@ -322,12 +386,10 @@ const SettingsScreen = ({ navigation }) => {
 
       // Check if it's a Google Sheets document URL (for import)
       const isSheetUrl = url.includes('docs.google.com/spreadsheets');
-      const isWebhookUrl = url.includes('script.google.com/macros');
 
       let importCount = 0;
-      let exportCount = 0;
 
-      // STEP 1: Import from Google Sheets (if it's a sheet URL)
+      // IMPORT ONLY: Import from Google Sheets (if it's a sheet URL)
       if (isSheetUrl) {
         Toast.show({
           type: 'info',
@@ -339,76 +401,45 @@ const SettingsScreen = ({ navigation }) => {
 
         importCount = await importFromGoogleSheets(url, databaseId);
 
+        // Check if user cancelled during import
+        if (importCancelled) {
+          Toast.hide();
+          Toast.show({
+            type: 'info',
+            text1: 'Import Cancelled',
+            text2: 'Import process was stopped by user',
+            position: 'bottom',
+            visibilityTime: 3000,
+          });
+          return;
+        }
+
         console.log(`[Sync] Imported ${importCount} expenses from Google Sheets`);
 
         // Wait a moment for Firebase to process
         await new Promise(resolve => setTimeout(resolve, 1500));
+      } else {
+        throw new Error('Please provide a Google Sheets URL (not a webhook URL)');
       }
 
-      // STEP 2: Export to Google Sheets (if it's a webhook URL)
-      if (isWebhookUrl) {
-        Toast.show({
-          type: 'info',
-          text1: '📤 Exporting...',
-          text2: 'Pushing all expenses to Google Sheets',
-          position: 'bottom',
-          autoHide: false,
-        });
-
-        const syncResult = await manualSyncToSheets(databaseId);
-        exportCount = syncResult?.result?.count || 0;
-
-        console.log(`[Sync] Exported ${exportCount} expenses to Google Sheets`);
-
+      // Check again if cancelled after processing
+      if (importCancelled) {
         Toast.hide();
-
-        if (!syncResult || !syncResult.success || syncResult.skipped) {
-          const errorMsg = syncResult?.error || 'Unknown error';
-          throw new Error(errorMsg);
-        }
+        return;
       }
 
-      // STEP 3: Show final success message
+      // Show success message
       Toast.hide();
-
-      let successMessage = '';
-      if (isSheetUrl && isWebhookUrl) {
-        // Full two-way sync
-        successMessage = `✓ Two-Way Sync Complete!\nImported ${importCount}, Exported ${exportCount} expenses`;
-      } else if (isSheetUrl) {
-        // Import only
-        successMessage = `✓ Import Complete! ${importCount} expenses imported`;
-      } else if (isWebhookUrl) {
-        // Export only
-        successMessage = `✓ Export Complete! ${exportCount} expenses synced`;
-      }
 
       Toast.show({
         type: 'success',
-        text1: 'Sync Successful',
-        text2: successMessage,
+        text1: 'Import Complete!',
+        text2: `✓ Successfully imported ${importCount} expenses`,
         position: 'bottom',
         visibilityTime: 4000,
       });
 
-      // Enable automatic polling for sheet-to-app sync
-      if (isSheetUrl) {
-        await enablePolling();
-        console.log('[Sync] Polling enabled for sheet-to-app sync');
-      }
-
-      // Show info about automatic sync
-      setTimeout(() => {
-        Toast.show({
-          type: 'info',
-          text1: '🔄 Auto-Sync Enabled',
-          text2: isSheetUrl
-            ? 'Two-way sync active: App ↔ Sheet'
-            : 'One-way sync active: App → Sheet',
-          position: 'bottom',
-          visibilityTime: 3000,
-        });
-      }, 4500);
+      console.log('[Sync] Import completed successfully');
 
     } catch (error) {
       console.error('[Sync] Manual sync error:', error);
@@ -423,6 +454,19 @@ const SettingsScreen = ({ navigation }) => {
     } finally {
       setSyncing(false);
     }
+  };
+
+  const handleCancelImport = () => {
+    setImportCancelled(true);
+    setSyncing(false);
+    Toast.hide();
+    Toast.show({
+      type: 'info',
+      text1: 'Cancelling...',
+      text2: 'Stopping import process',
+      position: 'bottom',
+      visibilityTime: 2000,
+    });
   };
 
   const handleViewInstructions = () => {
@@ -456,6 +500,235 @@ const SettingsScreen = ({ navigation }) => {
             } catch (error) {
               Alert.alert('Error', 'Failed to logout');
             }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleShowVersionInfo = () => {
+    const version = Constants.expoConfig?.version || '1.0.0';
+    const buildNumber = Platform.select({
+      ios: Constants.expoConfig?.ios?.buildNumber || '1',
+      android: Constants.expoConfig?.android?.versionCode || '1',
+      default: '1'
+    });
+    const bundleId = Platform.select({
+      ios: Constants.expoConfig?.ios?.bundleIdentifier || 'com.penny.app',
+      android: Constants.expoConfig?.android?.package || 'com.penny.app',
+      default: 'com.penny.app'
+    });
+
+    const debugInfo = `Version: ${version}\nBuild: ${buildNumber}\nPlatform: ${Platform.OS}\nBundle ID: ${bundleId}\nEnvironment: ${__DEV__ ? 'Development' : 'Production'}`;
+
+    Alert.alert(
+      'App Information',
+      debugInfo,
+      [
+        {
+          text: 'Copy',
+          onPress: () => {
+            Clipboard.setString(debugInfo);
+            Toast.show({
+              type: 'success',
+              text1: 'Copied!',
+              text2: 'App information copied to clipboard',
+              position: 'bottom',
+            });
+          }
+        },
+        { text: 'Close' }
+      ]
+    );
+  };
+
+  const handleDeleteAccount = async () => {
+    // First confirmation alert - Warning
+    Alert.alert(
+      '⚠️ Delete Account',
+      'This will permanently delete your account and ALL associated data:\n\n• All expenses\n• Budget settings\n• Goals and personality reports\n• Shared database memberships\n• Profile information\n\nThis action cannot be undone!\n\nPlease enter your password to confirm.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Continue',
+          style: 'destructive',
+          onPress: () => {
+            // Password verification prompt
+            Alert.prompt(
+              '🔒 Verify Password',
+              'Enter your password to permanently delete your account:',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Delete Account',
+                  style: 'destructive',
+                  onPress: async (password) => {
+                    if (!password || password.trim() === '') {
+                      Alert.alert('Error', 'Password is required');
+                      return;
+                    }
+
+                    try {
+                      // Show loading toast
+                      Toast.show({
+                        type: 'info',
+                        text1: 'Deleting account...',
+                        text2: 'This may take a moment',
+                        position: 'bottom',
+                        autoHide: false,
+                      });
+
+                      // Verify password with Firebase
+                      const currentUser = auth.currentUser;
+                      const credential = firebase.auth.EmailAuthProvider.credential(
+                        currentUser.email,
+                        password
+                      );
+
+                      await currentUser.reauthenticateWithCredential(credential);
+
+                      // Call account deletion service
+                      const result = await deleteAccount(currentUser.uid, currentUser);
+
+                      // Hide loading toast
+                      Toast.hide();
+
+                      if (result.success) {
+                        // Success - account deleted
+                        Toast.show({
+                          type: 'success',
+                          text1: 'Account Deleted',
+                          text2: 'Your account has been permanently deleted',
+                          position: 'bottom',
+                        });
+
+                        // Navigate to login screen
+                        navigation.reset({
+                          index: 0,
+                          routes: [{ name: 'Login' }],
+                        });
+                      } else {
+                        // Handle specific errors
+                        if (result.error === 'transfer_ownership') {
+                          Alert.alert(
+                            'Cannot Delete Account',
+                            result.message,
+                            [
+                              { text: 'OK' },
+                              {
+                                text: 'Manage Sharing',
+                                onPress: () => navigation.navigate('Invitations')
+                              }
+                            ]
+                          );
+                        } else {
+                          Alert.alert(
+                            'Error',
+                            result.message || 'Failed to delete account. Please try again.'
+                          );
+                        }
+                      }
+                    } catch (error) {
+                      // Hide loading toast
+                      Toast.hide();
+
+                      console.error('Error deleting account:', error);
+
+                      // Handle authentication errors
+                      if (error.code === 'auth/wrong-password') {
+                        Alert.alert('Error', 'Incorrect password. Please try again.');
+                      } else if (error.code === 'auth/too-many-requests') {
+                        Alert.alert('Error', 'Too many attempts. Please try again later.');
+                      } else if (error.code === 'auth/network-request-failed') {
+                        Alert.alert('Error', 'Network error. Please check your connection and try again.');
+                      } else {
+                        Alert.alert('Error', 'Failed to delete account. Please try again.');
+                      }
+                    }
+                  }
+                }
+              ],
+              'secure-text'
+            );
+          }
+        }
+      ]
+    );
+  };
+
+  const handleClearAllData = async () => {
+    // First confirmation alert
+    Alert.alert(
+      '⚠️ Clear All Data',
+      'This will permanently delete ALL your expenses. This action cannot be undone!\n\nPlease enter your password to confirm.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Continue',
+          style: 'destructive',
+          onPress: () => {
+            // Password verification prompt
+            Alert.prompt(
+              '🔒 Verify Password',
+              'Enter your password to confirm deletion:',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Delete Everything',
+                  style: 'destructive',
+                  onPress: async (password) => {
+                    if (!password || password.trim() === '') {
+                      Alert.alert('Error', 'Password is required');
+                      return;
+                    }
+
+                    try {
+                      // Verify password with Firebase
+                      const user = auth.currentUser;
+                      const credential = firebase.auth.EmailAuthProvider.credential(
+                        user.email,
+                        password
+                      );
+
+                      await user.reauthenticateWithCredential(credential);
+
+                      // Password verified, proceed with deletion
+                      Toast.show({
+                        type: 'info',
+                        text1: '🗑️ Deleting...',
+                        text2: 'Clearing all expense data',
+                        position: 'bottom',
+                        autoHide: false,
+                      });
+
+                      const result = await clearAllExpenses();
+
+                      Toast.hide();
+
+                      if (result.success) {
+                        Toast.show({
+                          type: 'success',
+                          text1: 'Data Cleared',
+                          text2: `✓ Deleted ${result.count} expenses successfully`,
+                          position: 'bottom',
+                          visibilityTime: 4000,
+                        });
+                      } else {
+                        throw new Error('Failed to clear data');
+                      }
+                    } catch (error) {
+                      Toast.hide();
+                      if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                        Alert.alert('Error', 'Incorrect password. Data was not deleted.');
+                      } else {
+                        Alert.alert('Error', `Failed to clear data: ${error.message}`);
+                      }
+                    }
+                  }
+                }
+              ],
+              'secure-text'
+            );
           }
         }
       ]
@@ -546,7 +819,7 @@ const SettingsScreen = ({ navigation }) => {
             </View>
             <View style={styles.formActions}>
               <TouchableOpacity
-                style={styles.cancelButton}
+                style={styles.formCancelButton}
                 onPress={handleCancelEdit}
                 disabled={updatingProfile}
               >
@@ -571,6 +844,53 @@ const SettingsScreen = ({ navigation }) => {
             <Text style={styles.profileEmail}>{user?.email}</Text>
           </>
         )}
+      </View>
+
+      {/* My Collab Code Section */}
+      <View style={styles.collabCodeSection}>
+        <Text style={styles.collabCodeTitle}>My Collab Code</Text>
+        <View style={styles.collabCodeCard}>
+          {loadingCollabCode ? (
+            <ActivityIndicator size="large" color={colors.primary} />
+          ) : collabCodeError ? (
+            <View style={styles.collabCodeError}>
+              <Icon name="exclamation-circle" size={40} color={colors.expense} />
+              <Text style={styles.errorText}>Unable to load code</Text>
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={loadCollabCode}
+              >
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <>
+              <View style={styles.codeDisplay}>
+                <Icon name="key" size={20} color={colors.primary} style={styles.keyIcon} />
+                <Text style={styles.collabCodeText}>{collabCode}</Text>
+              </View>
+              <Text style={styles.collabCodeDescription}>
+                Share this code with people you want to collaborate with
+              </Text>
+              <View style={styles.collabCodeActions}>
+                <TouchableOpacity
+                  style={[styles.collabCodeButton, styles.copyButton]}
+                  onPress={handleCopyCollabCode}
+                >
+                  <Icon name="copy" size={16} color={colors.text.primary} />
+                  <Text style={styles.collabCodeButtonText}>Copy Code</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.collabCodeButton, styles.shareButton]}
+                  onPress={handleShareCollabCode}
+                >
+                  <Icon name="share-alt" size={16} color={colors.text.primary} />
+                  <Text style={styles.collabCodeButtonText}>Share Code</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          )}
+        </View>
       </View>
 
       {/* Settings Menu */}
@@ -691,46 +1011,87 @@ const SettingsScreen = ({ navigation }) => {
 
             {/* Manual Sync Button */}
             {webhookUrl && (
-              <TouchableOpacity
-                style={[styles.syncButton, syncing && styles.buttonDisabled]}
-                onPress={handleManualSync}
-                disabled={syncing}
-              >
-                <LinearGradient
-                  colors={colors.primaryGradient}
-                  style={styles.syncButtonGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                  style={[styles.syncButton, syncing && styles.buttonDisabled, { flex: syncing ? 1 : undefined }]}
+                  onPress={handleManualSync}
+                  disabled={syncing}
                 >
-                  {syncing ? (
-                    <ActivityIndicator color={colors.text.primary} size="small" />
-                  ) : (
-                    <>
-                      <Icon name="sync-alt" size={18} color={colors.text.primary} />
-                      <Text style={[styles.buttonText, { marginLeft: 8 }]}>
-                        Sync Now (Import & Export)
-                      </Text>
-                    </>
-                  )}
-                </LinearGradient>
-              </TouchableOpacity>
+                  <LinearGradient
+                    colors={colors.primaryGradient}
+                    style={styles.syncButtonGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    {syncing ? (
+                      <>
+                        <ActivityIndicator color={colors.text.primary} size="small" />
+                        <Text style={[styles.buttonText, { marginLeft: 8 }]}>
+                          Importing...
+                        </Text>
+                      </>
+                    ) : (
+                      <>
+                        <Icon name="download" size={18} color={colors.text.primary} />
+                        <Text style={[styles.buttonText, { marginLeft: 8 }]}>
+                          Import from Google Sheets
+                        </Text>
+                      </>
+                    )}
+                  </LinearGradient>
+                </TouchableOpacity>
+
+                {/* Cancel Button - shown only when syncing */}
+                {syncing && (
+                  <TouchableOpacity
+                    style={styles.cancelButton}
+                    onPress={handleCancelImport}
+                  >
+                    <Icon name="times" size={18} color={colors.expense} />
+                    <Text style={[styles.buttonText, { marginLeft: 8, color: colors.expense }]}>
+                      Cancel
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             )}
-            <TouchableOpacity
-              style={styles.linkButton}
-              onPress={handleViewInstructions}
-            >
-              <Text style={styles.linkText}>
-                ℹ️ After sync, changes will automatically update between app and sheet
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.linkButton}
-              onPress={handleViewInstructions}
-            >
-              <Text style={styles.linkText}>
-                Required columns: Date, Description, Category, In, Out
-              </Text>
-            </TouchableOpacity>
+            {/* Info Box with organized information */}
+            <View style={styles.infoBox}>
+              {/* Primary info - Auto-sync message */}
+              <View style={styles.infoRow}>
+                <View style={styles.infoIconContainer}>
+                  <Icon name="sync-alt" size={14} color={colors.primary} />
+                </View>
+                <Text style={styles.infoTextPrimary}>
+                  Changes automatically sync between app and sheet
+                </Text>
+              </View>
+
+              {/* Divider */}
+              <View style={styles.infoDivider} />
+
+              {/* Secondary info - Required columns */}
+              <View style={styles.infoRow}>
+                <View style={styles.infoIconContainer}>
+                  <Icon name="table" size={14} color={colors.text.tertiary} />
+                </View>
+                <View style={styles.infoTextContainer}>
+                  <Text style={styles.infoLabel}>Required columns:</Text>
+                  <Text style={styles.infoTextSecondary}>
+                    Date, Description, Category, In, Out
+                  </Text>
+                </View>
+              </View>
+
+              {/* Help link */}
+              <TouchableOpacity
+                style={styles.helpLinkButton}
+                onPress={handleViewInstructions}
+              >
+                <Icon name="question-circle" size={12} color={colors.primary} />
+                <Text style={styles.helpLinkText}>View setup instructions</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
@@ -744,6 +1105,34 @@ const SettingsScreen = ({ navigation }) => {
               <Icon name="users" size={20} color={colors.primary} />
             </View>
             <Text style={styles.menuItemText}>Invitations & Sharing</Text>
+          </View>
+          <Icon name="chevron-right" size={18} color={colors.text.tertiary} />
+        </TouchableOpacity>
+
+        {/* Clear All Data */}
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={handleClearAllData}
+        >
+          <View style={styles.menuItemLeft}>
+            <View style={[styles.menuIcon, { backgroundColor: colors.glass.background }]}>
+              <Icon name="trash-alt" size={20} color="#FF6B6B" />
+            </View>
+            <Text style={[styles.menuItemText, { color: '#FF6B6B' }]}>Clear All Data</Text>
+          </View>
+          <Icon name="chevron-right" size={18} color={colors.text.tertiary} />
+        </TouchableOpacity>
+
+        {/* Delete Account */}
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={handleDeleteAccount}
+        >
+          <View style={styles.menuItemLeft}>
+            <View style={[styles.menuIcon, { backgroundColor: colors.glass.background }]}>
+              <Icon name="user-times" size={20} color={colors.expense} />
+            </View>
+            <Text style={[styles.menuItemText, { color: colors.expense }]}>Delete Account</Text>
           </View>
           <Icon name="chevron-right" size={18} color={colors.text.tertiary} />
         </TouchableOpacity>
@@ -762,6 +1151,21 @@ const SettingsScreen = ({ navigation }) => {
           <Icon name="chevron-right" size={18} color={colors.text.tertiary} />
         </TouchableOpacity>
       </View>
+
+      {/* App Version */}
+      <TouchableOpacity
+        style={styles.versionContainer}
+        onPress={handleShowVersionInfo}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.versionText}>
+          Version {Constants.expoConfig?.version || '1.0.0'} ({Platform.select({
+            ios: Constants.expoConfig?.ios?.buildNumber || '1',
+            android: Constants.expoConfig?.android?.versionCode || '1',
+            default: '1'
+          })})
+        </Text>
+      </TouchableOpacity>
 
       <View style={{ height: 40 }} />
     </ScrollView>
@@ -905,7 +1309,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
   },
-  cancelButton: {
+  formCancelButton: {
     paddingVertical: 10,
   },
   cancelButtonText: {
@@ -1004,15 +1408,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: colors.text.primary,
   },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 15,
-  },
   smallButton: {
     flex: 1,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 20, // Pill shape
     alignItems: 'center',
     justifyContent: 'center',
     ...shadows.sm,
@@ -1033,19 +1432,78 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  linkButton: {
-    alignItems: 'center',
-    paddingVertical: 10,
-    marginTop: 10,
+  // Info Box Styles - Organized information display
+  infoBox: {
+    backgroundColor: colors.glass.background,
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: colors.glass.borderLight,
   },
-  linkText: {
-    color: colors.primary,
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  infoIconContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(0, 217, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    marginTop: 2,
+  },
+  infoTextContainer: {
+    flex: 1,
+  },
+  infoTextPrimary: {
+    flex: 1,
+    color: colors.text.primary,
     fontSize: 14,
-    textDecorationLine: 'underline',
+    lineHeight: 20,
+    fontWeight: '500',
+    marginTop: 4,
+  },
+  infoLabel: {
+    color: colors.text.tertiary,
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  infoTextSecondary: {
+    color: colors.text.secondary,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  infoDivider: {
+    height: 1,
+    backgroundColor: colors.glass.borderLight,
+    marginVertical: 12,
+  },
+  helpLinkButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    paddingVertical: 8,
+  },
+  helpLinkText: {
+    color: colors.primary,
+    fontSize: 13,
+    fontWeight: '500',
+    marginLeft: 6,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 15,
   },
   syncButton: {
-    marginTop: 15,
-    borderRadius: 12,
+    borderRadius: 25, // Pill shape
     overflow: 'hidden',
     ...shadows.md,
   },
@@ -1055,6 +1513,135 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 25, // Pill shape
+  },
+  cancelButton: {
+    backgroundColor: colors.glass.background,
+    borderWidth: 1,
+    borderColor: colors.expense,
+    borderRadius: 25, // Pill shape
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...shadows.sm,
+  },
+  // Collab Code Section Styles
+  collabCodeSection: {
+    paddingHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  collabCodeTitle: {
+    ...typography.h4,
+    marginBottom: 12,
+    color: colors.text.primary,
+  },
+  collabCodeCard: {
+    backgroundColor: colors.glass.background,
+    borderRadius: 16,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: colors.glass.border,
+    ...shadows.md,
+    alignItems: 'center',
+    minHeight: 160,
+    justifyContent: 'center',
+  },
+  codeDisplay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: colors.primary,
+    marginBottom: 16,
+    width: '100%',
+    justifyContent: 'center',
+  },
+  keyIcon: {
+    marginRight: 12,
+  },
+  collabCodeText: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: colors.primary,
+    letterSpacing: 2,
+    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+  },
+  collabCodeDescription: {
+    fontSize: 14,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  collabCodeActions: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  collabCodeButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    gap: 8,
+    minHeight: 48,
+  },
+  copyButton: {
+    backgroundColor: colors.primary,
+    ...shadows.sm,
+  },
+  shareButton: {
+    backgroundColor: colors.income,
+    ...shadows.sm,
+  },
+  collabCodeButtonText: {
+    color: colors.text.primary,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  collabCodeError: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+  },
+  errorText: {
+    color: colors.text.secondary,
+    fontSize: 16,
+    marginTop: 12,
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    ...shadows.sm,
+  },
+  retryButtonText: {
+    color: colors.text.primary,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  // Version Display Styles
+  versionContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 30,
+    marginTop: 20,
+  },
+  versionText: {
+    fontSize: 12,
+    color: colors.text.tertiary,
+    opacity: 0.6,
   },
 });
 

@@ -39,10 +39,10 @@ export const addExpense = async (expenseData, options = {}) => {
       createdAt: firebase.firestore.Timestamp.now()
     });
 
-    // Sync all expenses to Google Sheets after adding (unless skipSync is true)
-    if (!options.skipSync) {
-      await syncAllExpensesToSheets(databaseId);
-    }
+    // Sync disabled - Import only mode
+    // if (!options.skipSync) {
+    //   await syncAllExpensesToSheets(databaseId);
+    // }
 
     return docRef.id;
   } catch (error) {
@@ -133,8 +133,8 @@ export const updateExpense = async (expenseId, expenseData) => {
       updatedAt: firebase.firestore.Timestamp.now()
     });
 
-    // Sync all expenses to Google Sheets after updating
-    await syncAllExpensesToSheets(databaseId);
+    // Sync disabled - Import only mode
+    // await syncAllExpensesToSheets(databaseId);
   } catch (error) {
     console.error('Error updating expense:', error);
     throw error;
@@ -151,8 +151,8 @@ export const deleteExpense = async (expenseId) => {
 
     await getUserExpensesCollection(databaseId).doc(expenseId).delete();
 
-    // Sync all expenses to Google Sheets after deleting
-    await syncAllExpensesToSheets(databaseId);
+    // Sync disabled - Import only mode
+    // await syncAllExpensesToSheets(databaseId);
   } catch (error) {
     console.error('Error deleting expense:', error);
     throw error;
@@ -251,4 +251,60 @@ const syncAllExpensesToSheets = async (userId) => {
 // Export manual sync function for Settings screen
 export const manualSyncToSheets = async (userId) => {
   return await syncAllExpensesToSheets(userId);
+};
+
+/**
+ * Clear all expenses for the current user
+ * WARNING: This is a destructive operation and cannot be undone
+ */
+export const clearAllExpenses = async () => {
+  try {
+    console.log('[ExpenseService] Starting to clear all expenses...');
+
+    const user = auth.currentUser;
+    if (!user) throw new Error('User not authenticated');
+
+    const databaseId = await getDatabaseId();
+    console.log('[ExpenseService] Database ID:', databaseId);
+
+    const expensesRef = getUserExpensesCollection(databaseId);
+
+    // Get all expenses
+    const snapshot = await expensesRef.get();
+
+    if (snapshot.empty) {
+      console.log('[ExpenseService] No expenses to delete');
+      return { success: true, count: 0 };
+    }
+
+    console.log(`[ExpenseService] Found ${snapshot.size} expenses to delete`);
+
+    // Delete in batches (Firestore limit is 500 per batch)
+    const batchSize = 500;
+    let deleted = 0;
+
+    let docsToDelete = await expensesRef.limit(batchSize).get();
+
+    while (!docsToDelete.empty) {
+      const batch = db.batch();
+
+      docsToDelete.docs.forEach(doc => {
+        batch.delete(doc.ref);
+      });
+
+      await batch.commit();
+      deleted += docsToDelete.size;
+      console.log(`[ExpenseService] Deleted ${deleted} expenses...`);
+
+      // Get next batch
+      docsToDelete = await expensesRef.limit(batchSize).get();
+    }
+
+    console.log(`[ExpenseService] ✓ Successfully deleted ${deleted} expenses`);
+
+    return { success: true, count: deleted };
+  } catch (error) {
+    console.error('[ExpenseService] Error clearing expenses:', error);
+    throw error;
+  }
 };

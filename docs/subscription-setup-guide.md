@@ -47,7 +47,7 @@ Complete guide for setting up RevenueCat and iOS in-app purchases for the Expens
 
    **Subscription Duration:** 1 Month
 
-   **Price:** Select **Tier 10** ($9.99 USD)
+   **Price:** Select **Tier 5** ($4.99 USD)
 
 3. Configure the **Free Trial**:
    - Click "Add Free Trial"
@@ -75,7 +75,7 @@ Complete guide for setting up RevenueCat and iOS in-app purchases for the Expens
 
    **Product ID:** `expense_monitor_lifetime` (IMPORTANT: Use this exact ID)
 
-   **Price:** Select **Tier 200** ($199.99 USD)
+   **Price:** Select **Tier 150** ($149.99 USD)
 
 4. Add **Localized Information**:
    - **Display Name (English):** Premium Lifetime
@@ -332,8 +332,8 @@ Sandbox accounts let you test purchases without real money.
 4. Tap "Start 14-Day Free Trial"
 5. You should see the iOS payment sheet with:
    - Product name: "Premium Monthly"
-   - Price: $9.99
-   - "FREE for 14 days, then $9.99/month"
+   - Price: $4.99
+   - "FREE for 14 days, then $4.99/month"
 6. Confirm purchase (use Face ID/Touch ID or password)
 7. Purchase should complete immediately
 8. Verify in app: Premium features unlock
@@ -351,7 +351,7 @@ Sandbox accounts let you test purchases without real money.
 1. Use a different sandbox account
 2. Sign out and create new Firebase account in app
 3. Navigate to paywall
-4. Tap "Buy Lifetime Access for $199"
+4. Tap "Buy Lifetime Access for $149.99"
 5. Confirm purchase
 6. Verify premium features unlock
 7. Check RevenueCat: Should show `expense_monitor_lifetime` with no expiration date

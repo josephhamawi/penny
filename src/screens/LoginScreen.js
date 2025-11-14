@@ -122,7 +122,7 @@ const LoginScreen = ({ navigation }) => {
             />
           </View>
           <Text style={styles.title}>Penny</Text>
-          <Text style={styles.subtitle}>Smart spending insights</Text>
+          <Text style={styles.subtitle}>Smarter Spending. Powered By AI</Text>
 
           <TextInput
             style={styles.input}

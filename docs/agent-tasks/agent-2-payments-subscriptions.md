@@ -1,7 +1,7 @@
 # Agent 2: Payments & Subscription Specialist
 
 ## 🎯 Mission
-Implement complete subscription infrastructure using RevenueCat and iOS StoreKit. Enable users to purchase monthly ($10) or lifetime ($199) subscriptions with 14-day free trial, and manage the full subscription lifecycle.
+Implement complete subscription infrastructure using RevenueCat and iOS StoreKit. Enable users to purchase monthly ($4.99) or lifetime ($149.99) subscriptions with 14-day free trial, and manage the full subscription lifecycle.
 
 ---
 
@@ -26,8 +26,8 @@ Implement complete subscription infrastructure using RevenueCat and iOS StoreKit
 
 #### Acceptance Criteria
 1. ✓ RevenueCat account created and linked to App Store Connect
-2. ✓ Monthly subscription product created: `expense_monitor_monthly` - $10/month with 14-day trial
-3. ✓ Lifetime subscription product created: `expense_monitor_lifetime` - $199 one-time purchase
+2. ✓ Monthly subscription product created: `expense_monitor_monthly` - $4.99/month with 14-day trial
+3. ✓ Lifetime subscription product created: `expense_monitor_lifetime` - $149.99 one-time purchase
 4. ✓ Products configured in RevenueCat dashboard with correct identifiers
 5. ✓ Sandbox test accounts set up in App Store Connect for testing
 6. ✓ RevenueCat API key obtained and stored securely
@@ -44,12 +44,12 @@ Implement complete subscription infrastructure using RevenueCat and iOS StoreKit
      - Reference Name: "Expense Monitor Premium Monthly"
      - Subscription Group: "Premium Features"
      - Duration: 1 Month
-     - Price: $9.99 USD
+     - Price: $4.99 USD
      - **Free Trial:** 14 days
    - **Type:** Non-Consumable (lifetime)
      - Product ID: `expense_monitor_lifetime`
      - Reference Name: "Expense Monitor Premium Lifetime"
-     - Price: $199.99 USD
+     - Price: $149.99 USD
 
 4. Fill out required metadata (descriptions, screenshots)
 5. Create sandbox test accounts (Settings → Users and Access → Sandbox Testers)
