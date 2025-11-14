@@ -6,9 +6,8 @@
     <title>Penny Admin - Waitlist Dashboard</title>
 
     <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-    <link rel="shortcut icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="../32x32.png">
+    <link rel="shortcut icon" href="../32x32.png">
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -264,6 +263,172 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            <!-- Blog Management Section -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 border border-slate-200 mb-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-slate-900">Blog Posts</h2>
+                    <button
+                        id="createBlogBtn"
+                        class="px-4 py-2 bg-gradient-to-r from-penny-500 to-penny-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all"
+                    >
+                        + New Blog Post
+                    </button>
+                </div>
+
+                <!-- Blog Posts List -->
+                <div id="blogPostsList" class="space-y-4">
+                    <div class="text-center py-8 text-slate-500">Loading blog posts...</div>
+                </div>
+            </div>
+
+            <!-- Blog Editor Modal -->
+            <div id="blogEditorModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+                    <div class="sticky top-0 bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center">
+                        <h3 class="text-2xl font-bold text-slate-900" id="blogEditorTitle">Create New Blog Post</h3>
+                        <button id="closeBlogEditor" class="text-slate-400 hover:text-slate-600 transition-colors">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <form id="blogPostForm" class="p-6 space-y-6">
+                        <input type="hidden" id="blogPostId" value="">
+
+                        <!-- Title -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">Title</label>
+                            <input
+                                type="text"
+                                id="blogTitle"
+                                required
+                                placeholder="Enter blog post title"
+                                class="w-full px-4 py-3 rounded-lg border-2 border-slate-200 focus:border-penny-500 focus:outline-none text-slate-800 font-medium"
+                            />
+                        </div>
+
+                        <!-- Slug -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">Slug (URL-friendly)</label>
+                            <input
+                                type="text"
+                                id="blogSlug"
+                                required
+                                placeholder="blog-post-url-slug"
+                                class="w-full px-4 py-3 rounded-lg border-2 border-slate-200 focus:border-penny-500 focus:outline-none text-slate-800"
+                            />
+                            <p class="text-xs text-slate-500 mt-1">This will be used in the URL: penny.app/blog/your-slug</p>
+                        </div>
+
+                        <!-- Author -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">Author</label>
+                            <input
+                                type="text"
+                                id="blogAuthor"
+                                required
+                                placeholder="John Doe"
+                                class="w-full px-4 py-3 rounded-lg border-2 border-slate-200 focus:border-penny-500 focus:outline-none text-slate-800"
+                            />
+                        </div>
+
+                        <!-- Excerpt -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">Excerpt (Short Description)</label>
+                            <textarea
+                                id="blogExcerpt"
+                                required
+                                rows="2"
+                                placeholder="A brief summary of the blog post..."
+                                class="w-full px-4 py-3 rounded-lg border-2 border-slate-200 focus:border-penny-500 focus:outline-none text-slate-800 resize-none"
+                            ></textarea>
+                        </div>
+
+                        <!-- Content -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">Content (Markdown supported)</label>
+                            <textarea
+                                id="blogContent"
+                                required
+                                rows="12"
+                                placeholder="Write your blog post content here... Markdown is supported!"
+                                class="w-full px-4 py-3 rounded-lg border-2 border-slate-200 focus:border-penny-500 focus:outline-none text-slate-800 font-mono text-sm resize-none"
+                            ></textarea>
+                        </div>
+
+                        <!-- Category & Tags -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Category</label>
+                                <select
+                                    id="blogCategory"
+                                    required
+                                    class="w-full px-4 py-3 rounded-lg border-2 border-slate-200 focus:border-penny-500 focus:outline-none text-slate-800"
+                                >
+                                    <option value="">Select category</option>
+                                    <option value="finance">Finance Tips</option>
+                                    <option value="savings">Savings</option>
+                                    <option value="budgeting">Budgeting</option>
+                                    <option value="investing">Investing</option>
+                                    <option value="news">Company News</option>
+                                    <option value="tutorials">Tutorials</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Tags (comma-separated)</label>
+                                <input
+                                    type="text"
+                                    id="blogTags"
+                                    placeholder="money, tips, budget"
+                                    class="w-full px-4 py-3 rounded-lg border-2 border-slate-200 focus:border-penny-500 focus:outline-none text-slate-800"
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Featured Image URL -->
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">Featured Image URL (optional)</label>
+                            <input
+                                type="url"
+                                id="blogImageUrl"
+                                placeholder="https://example.com/image.jpg"
+                                class="w-full px-4 py-3 rounded-lg border-2 border-slate-200 focus:border-penny-500 focus:outline-none text-slate-800"
+                            />
+                        </div>
+
+                        <!-- Published Status -->
+                        <div class="flex items-center gap-3">
+                            <input
+                                type="checkbox"
+                                id="blogPublished"
+                                class="w-5 h-5 rounded border-slate-300 text-penny-500 focus:ring-penny-500"
+                            />
+                            <label for="blogPublished" class="text-sm font-semibold text-slate-700">
+                                Publish immediately (uncheck to save as draft)
+                            </label>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="flex gap-3 pt-4 border-t border-slate-200">
+                            <button
+                                type="submit"
+                                class="flex-1 bg-gradient-to-r from-penny-500 to-penny-600 text-white font-semibold px-6 py-3 rounded-lg hover:shadow-lg transition-all"
+                            >
+                                Save Blog Post
+                            </button>
+                            <button
+                                type="button"
+                                id="cancelBlogEdit"
+                                class="px-6 py-3 bg-slate-100 text-slate-700 font-medium rounded-lg hover:bg-slate-200 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
 
@@ -1043,6 +1208,274 @@
                 document.getElementById('closeSettingsBtn').click();
             }
         });
+
+        // ========================================
+        // BLOG MANAGEMENT
+        // ========================================
+        let currentEditingBlogId = null;
+
+        // Load blog posts
+        async function loadBlogPosts() {
+            const blogPostsList = document.getElementById('blogPostsList');
+
+            try {
+                const blogsSnapshot = await db.collection('landing_blogs').orderBy('createdAt', 'desc').get();
+
+                if (blogsSnapshot.empty) {
+                    blogPostsList.innerHTML = '<div class="text-center py-8 text-slate-500">No blog posts yet. Click "New Blog Post" to create one.</div>';
+                    return;
+                }
+
+                let blogsHTML = '';
+                blogsSnapshot.forEach((doc) => {
+                    const blog = doc.data();
+                    const blogId = doc.id;
+
+                    const createdDate = blog.createdAt && blog.createdAt.toDate
+                        ? blog.createdAt.toDate()
+                        : new Date();
+
+                    const statusBadge = blog.published
+                        ? '<span class="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full">Published</span>'
+                        : '<span class="px-3 py-1 bg-amber-100 text-amber-700 text-xs font-semibold rounded-full">Draft</span>';
+
+                    const categoryColors = {
+                        'finance': 'bg-blue-100 text-blue-700',
+                        'savings': 'bg-green-100 text-green-700',
+                        'budgeting': 'bg-purple-100 text-purple-700',
+                        'investing': 'bg-indigo-100 text-indigo-700',
+                        'news': 'bg-red-100 text-red-700',
+                        'tutorials': 'bg-teal-100 text-teal-700'
+                    };
+
+                    const categoryClass = categoryColors[blog.category] || 'bg-slate-100 text-slate-700';
+
+                    blogsHTML += `
+                        <div class="border border-slate-200 rounded-xl p-5 hover:border-penny-300 hover:shadow-md transition-all">
+                            <div class="flex justify-between items-start gap-4">
+                                <div class="flex-1">
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <h3 class="text-lg font-bold text-slate-900">${escapeHtml(blog.title)}</h3>
+                                        ${statusBadge}
+                                    </div>
+                                    <p class="text-sm text-slate-600 mb-3">${escapeHtml(blog.excerpt)}</p>
+                                    <div class="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                                        <span class="px-2 py-1 ${categoryClass} rounded-full font-medium">${blog.category}</span>
+                                        <span>•</span>
+                                        <span>By ${escapeHtml(blog.author)}</span>
+                                        <span>•</span>
+                                        <span>${createdDate.toLocaleDateString()}</span>
+                                        <span>•</span>
+                                        <span class="font-mono text-xs text-slate-400">/blog/${escapeHtml(blog.slug)}</span>
+                                    </div>
+                                    ${blog.tags ? `
+                                        <div class="flex flex-wrap gap-1 mt-2">
+                                            ${blog.tags.split(',').map(tag =>
+                                                `<span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-xs">${escapeHtml(tag.trim())}</span>`
+                                            ).join('')}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                                ${blog.imageUrl ? `
+                                    <img src="${escapeHtml(blog.imageUrl)}" alt="Featured" class="w-24 h-24 object-cover rounded-lg">
+                                ` : ''}
+                            </div>
+                            <div class="flex gap-2 mt-4 pt-4 border-t border-slate-100">
+                                <button
+                                    onclick="editBlogPost('${blogId}')"
+                                    class="flex-1 px-4 py-2 bg-penny-50 text-penny-700 font-medium rounded-lg hover:bg-penny-100 transition-colors"
+                                >
+                                    Edit
+                                </button>
+                                <button
+                                    onclick="toggleBlogPublish('${blogId}', ${!blog.published})"
+                                    class="flex-1 px-4 py-2 ${blog.published ? 'bg-amber-50 text-amber-700 hover:bg-amber-100' : 'bg-green-50 text-green-700 hover:bg-green-100'} font-medium rounded-lg transition-colors"
+                                >
+                                    ${blog.published ? 'Unpublish' : 'Publish'}
+                                </button>
+                                <button
+                                    onclick="deleteBlogPost('${blogId}', '${escapeHtml(blog.title).replace(/'/g, "\\'")}')"
+                                    class="px-4 py-2 bg-red-50 text-red-700 font-medium rounded-lg hover:bg-red-100 transition-colors"
+                                >
+                                    Delete
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                blogPostsList.innerHTML = blogsHTML;
+
+            } catch (error) {
+                console.error('Error loading blog posts:', error);
+                blogPostsList.innerHTML = '<div class="text-center py-8 text-red-500">Error loading blog posts. Please refresh.</div>';
+            }
+        }
+
+        // Open blog editor modal (create new)
+        document.getElementById('createBlogBtn').addEventListener('click', function() {
+            currentEditingBlogId = null;
+            document.getElementById('blogEditorTitle').textContent = 'Create New Blog Post';
+            document.getElementById('blogPostForm').reset();
+            document.getElementById('blogPostId').value = '';
+            document.getElementById('blogEditorModal').classList.remove('hidden');
+        });
+
+        // Close blog editor modal
+        document.getElementById('closeBlogEditor').addEventListener('click', function() {
+            document.getElementById('blogEditorModal').classList.add('hidden');
+            currentEditingBlogId = null;
+        });
+
+        document.getElementById('cancelBlogEdit').addEventListener('click', function() {
+            document.getElementById('blogEditorModal').classList.add('hidden');
+            currentEditingBlogId = null;
+        });
+
+        // Auto-generate slug from title
+        document.getElementById('blogTitle').addEventListener('input', function() {
+            if (!currentEditingBlogId) { // Only auto-generate for new posts
+                const title = this.value;
+                const slug = title
+                    .toLowerCase()
+                    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters
+                    .replace(/\s+/g, '-') // Replace spaces with hyphens
+                    .replace(/-+/g, '-') // Remove consecutive hyphens
+                    .trim();
+                document.getElementById('blogSlug').value = slug;
+            }
+        });
+
+        // Submit blog post form (create or update)
+        document.getElementById('blogPostForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Saving...';
+
+            try {
+                const blogData = {
+                    title: document.getElementById('blogTitle').value.trim(),
+                    slug: document.getElementById('blogSlug').value.trim(),
+                    author: document.getElementById('blogAuthor').value.trim(),
+                    excerpt: document.getElementById('blogExcerpt').value.trim(),
+                    content: document.getElementById('blogContent').value.trim(),
+                    category: document.getElementById('blogCategory').value,
+                    tags: document.getElementById('blogTags').value.trim(),
+                    imageUrl: document.getElementById('blogImageUrl').value.trim(),
+                    published: document.getElementById('blogPublished').checked,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                if (currentEditingBlogId) {
+                    // Update existing blog post
+                    await db.collection('landing_blogs').doc(currentEditingBlogId).update(blogData);
+                    alert('Blog post updated successfully!');
+                } else {
+                    // Create new blog post
+                    blogData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+                    await db.collection('landing_blogs').add(blogData);
+                    alert('Blog post created successfully!');
+                }
+
+                // Close modal and reload
+                document.getElementById('blogEditorModal').classList.add('hidden');
+                currentEditingBlogId = null;
+                await loadBlogPosts();
+
+            } catch (error) {
+                console.error('Error saving blog post:', error);
+                alert('Error saving blog post. Please try again.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        });
+
+        // Edit blog post
+        window.editBlogPost = async function(blogId) {
+            try {
+                const doc = await db.collection('landing_blogs').doc(blogId).get();
+
+                if (!doc.exists) {
+                    alert('Blog post not found.');
+                    return;
+                }
+
+                const blog = doc.data();
+                currentEditingBlogId = blogId;
+
+                // Populate form
+                document.getElementById('blogEditorTitle').textContent = 'Edit Blog Post';
+                document.getElementById('blogPostId').value = blogId;
+                document.getElementById('blogTitle').value = blog.title || '';
+                document.getElementById('blogSlug').value = blog.slug || '';
+                document.getElementById('blogAuthor').value = blog.author || '';
+                document.getElementById('blogExcerpt').value = blog.excerpt || '';
+                document.getElementById('blogContent').value = blog.content || '';
+                document.getElementById('blogCategory').value = blog.category || '';
+                document.getElementById('blogTags').value = blog.tags || '';
+                document.getElementById('blogImageUrl').value = blog.imageUrl || '';
+                document.getElementById('blogPublished').checked = blog.published || false;
+
+                // Show modal
+                document.getElementById('blogEditorModal').classList.remove('hidden');
+
+            } catch (error) {
+                console.error('Error loading blog post:', error);
+                alert('Error loading blog post. Please try again.');
+            }
+        };
+
+        // Toggle publish status
+        window.toggleBlogPublish = async function(blogId, newPublishState) {
+            try {
+                await db.collection('landing_blogs').doc(blogId).update({
+                    published: newPublishState,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                await loadBlogPosts();
+                alert(newPublishState ? 'Blog post published!' : 'Blog post unpublished.');
+
+            } catch (error) {
+                console.error('Error updating publish status:', error);
+                alert('Error updating blog post. Please try again.');
+            }
+        };
+
+        // Delete blog post
+        window.deleteBlogPost = async function(blogId, blogTitle) {
+            if (!confirm(`Are you sure you want to delete "${blogTitle}"?\n\nThis action cannot be undone.`)) {
+                return;
+            }
+
+            try {
+                await db.collection('landing_blogs').doc(blogId).delete();
+                await loadBlogPosts();
+                alert('Blog post deleted successfully.');
+
+            } catch (error) {
+                console.error('Error deleting blog post:', error);
+                alert('Error deleting blog post. Please try again.');
+            }
+        };
+
+        // Close modal when clicking outside
+        document.getElementById('blogEditorModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                document.getElementById('closeBlogEditor').click();
+            }
+        });
+
+        // Load blog posts when dashboard loads (add to existing loadDashboardData)
+        const originalLoadDashboardData = loadDashboardData;
+        loadDashboardData = async function() {
+            await originalLoadDashboardData();
+            await loadBlogPosts();
+        };
     </script>
 
 </body>

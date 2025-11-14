@@ -353,7 +353,7 @@
                 </div>
 
                 <!-- Blog Button -->
-                <a href="#" onclick="alert('Blog coming soon! Stay tuned for financial tips and insights.'); return false;" class="hidden md:flex user-profile cursor-pointer nav-link-blog" data-nav="blog" style="position: relative;">
+                <a href="#" onclick="showToast('Blog Coming Soon!', 'Stay tuned for financial tips and insights.', 'info'); return false;" class="hidden md:flex user-profile cursor-pointer nav-link-blog" data-nav="blog" style="position: relative;">
                     <div class="nav-indicator-blog"></div>
                     <span class="user-name" style="position: relative; z-index: 2;">Blog</span>
                 </a>
@@ -1058,14 +1058,50 @@
             // Reset form
             document.getElementById('suggestionForm').reset();
 
-            // Show success message
-            document.getElementById('suggestionSuccessMessage').classList.remove('hidden');
-
-            // Hide success message after 3 seconds
-            setTimeout(() => {
-                document.getElementById('suggestionSuccessMessage').classList.add('hidden');
-            }, 3000);
+            // Show success toast
+            showToast('Thank you!', 'We truly appreciate your feedback and will review it soon.', 'success', 5000);
         });
+
+        // Toast Notification System
+        function showToast(title, message, type = 'info', duration = 4000) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+
+            // Icon SVG based on type
+            const icons = {
+                success: '<svg class="toast-icon" fill="none" stroke="#10b981" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+                error: '<svg class="toast-icon" fill="none" stroke="#ef4444" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>',
+                warning: '<svg class="toast-icon" fill="none" stroke="#f59e0b" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>',
+                info: '<svg class="toast-icon" fill="none" stroke="#14d4cc" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
+            };
+
+            toast.innerHTML = `
+                ${icons[type] || icons.info}
+                <div class="toast-content">
+                    <div class="toast-title">${title}</div>
+                    ${message ? `<div class="toast-message">${message}</div>` : ''}
+                </div>
+                <div class="toast-close" onclick="this.parentElement.remove()">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                        <path d="M9 3L3 9M3 3L9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                </div>
+            `;
+
+            container.appendChild(toast);
+
+            // Auto remove after duration
+            if (duration > 0) {
+                setTimeout(() => {
+                    toast.classList.add('toast-exit');
+                    setTimeout(() => toast.remove(), 300);
+                }, duration);
+            }
+        }
 
         // Floating header scroll behavior
         const header = document.querySelector('.floating-header');
