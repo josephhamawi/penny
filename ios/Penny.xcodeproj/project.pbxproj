@@ -21,7 +21,7 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = Penny/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Penny/Info.plist; sourceTree = "<group>"; };
 		7A02F70F8E9561C4ABD7B11B /* Pods-Penny.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Penny.debug.xcconfig"; path = "Target Support Files/Pods-Penny/Pods-Penny.debug.xcconfig"; sourceTree = "<group>"; };
-		97BA3B7D15A498F2FA50C3E0 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = Penny/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		97BA3B7D15A498F2FA50C3E0 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = Penny/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = Penny/SplashScreen.storyboard; sourceTree = "<group>"; };
 		B52539C6FED15EDBB8903FC5 /* Pods-Penny.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Penny.release.xcconfig"; path = "Target Support Files/Pods-Penny/Pods-Penny.release.xcconfig"; sourceTree = "<group>"; };
 		B85397E36A3C549509F8A43F /* libPods-Penny.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Penny.a"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -64,7 +64,6 @@
 				7A02F70F8E9561C4ABD7B11B /* Pods-Penny.debug.xcconfig */,
 				B52539C6FED15EDBB8903FC5 /* Pods-Penny.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -384,7 +383,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Penny/Penny.entitlements;
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8KP768HXXK;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -420,7 +421,9 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = Penny/Penny.entitlements;
+				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 8KP768HXXK;
 				INFOPLIST_FILE = Penny/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (

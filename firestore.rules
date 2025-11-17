@@ -47,6 +47,12 @@ service cloud.firestore {
         // Allow read/write if user owns this data OR is a member of the shared database
         allow read, write: if isOwner(userId) || isMember(userId);
       }
+
+      // Spending Plan collection
+      match /spendingPlan/{planId} {
+        // Allow read/write if user owns this data OR is a member of the shared database
+        allow read, write: if isOwner(userId) || isMember(userId);
+      }
     }
 
     // Invitations collection

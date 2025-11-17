@@ -60,6 +60,7 @@ const SettingsScreen = ({ navigation }) => {
   const [collabCode, setCollabCode] = useState('');
   const [loadingCollabCode, setLoadingCollabCode] = useState(true);
   const [collabCodeError, setCollabCodeError] = useState(false);
+  const [expandedCollabCode, setExpandedCollabCode] = useState(false);
   const { user, logout, updateUserProfile } = useAuth();
 
   useEffect(() => {
@@ -70,6 +71,10 @@ const SettingsScreen = ({ navigation }) => {
       setDisplayName(user.displayName || '');
       setPhotoURL(user.photoURL || null);
     }
+
+    // Debug version info
+    console.log('[Settings] expoConfig.version:', Constants.expoConfig?.version);
+    console.log('[Settings] manifest.version:', Constants.manifest?.version);
   }, [user]);
 
   const loadWebhookUrl = async () => {
@@ -744,7 +749,8 @@ const SettingsScreen = ({ navigation }) => {
   }
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <View style={styles.container}>
+    <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
       {/* Header with Gradient */}
       <LinearGradient
         colors={colors.primaryGradient}
@@ -847,50 +853,68 @@ const SettingsScreen = ({ navigation }) => {
       </View>
 
       {/* My Collab Code Section */}
-      <View style={styles.collabCodeSection}>
-        <Text style={styles.collabCodeTitle}>My Collab Code</Text>
-        <View style={styles.collabCodeCard}>
-          {loadingCollabCode ? (
-            <ActivityIndicator size="large" color={colors.primary} />
-          ) : collabCodeError ? (
-            <View style={styles.collabCodeError}>
-              <Icon name="exclamation-circle" size={40} color={colors.expense} />
-              <Text style={styles.errorText}>Unable to load code</Text>
-              <TouchableOpacity
-                style={styles.retryButton}
-                onPress={loadCollabCode}
-              >
-                <Text style={styles.retryButtonText}>Retry</Text>
-              </TouchableOpacity>
+      <View style={styles.menuSection}>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => setExpandedCollabCode(!expandedCollabCode)}
+        >
+          <View style={styles.menuItemLeft}>
+            <View style={[styles.menuIcon, { backgroundColor: colors.glass.background }]}>
+              <Icon name="key" size={20} color={colors.primary} />
             </View>
+            <Text style={styles.menuItemText}>My Collab Code</Text>
+          </View>
+          {expandedCollabCode ? (
+            <Icon name="chevron-down" size={18} color={colors.text.tertiary} />
           ) : (
-            <>
-              <View style={styles.codeDisplay}>
-                <Icon name="key" size={20} color={colors.primary} style={styles.keyIcon} />
-                <Text style={styles.collabCodeText}>{collabCode}</Text>
-              </View>
-              <Text style={styles.collabCodeDescription}>
-                Share this code with people you want to collaborate with
-              </Text>
-              <View style={styles.collabCodeActions}>
-                <TouchableOpacity
-                  style={[styles.collabCodeButton, styles.copyButton]}
-                  onPress={handleCopyCollabCode}
-                >
-                  <Icon name="copy" size={16} color={colors.text.primary} />
-                  <Text style={styles.collabCodeButtonText}>Copy Code</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.collabCodeButton, styles.shareButton]}
-                  onPress={handleShareCollabCode}
-                >
-                  <Icon name="share-alt" size={16} color={colors.text.primary} />
-                  <Text style={styles.collabCodeButtonText}>Share Code</Text>
-                </TouchableOpacity>
-              </View>
-            </>
+            <Icon name="chevron-right" size={18} color={colors.text.tertiary} />
           )}
-        </View>
+        </TouchableOpacity>
+
+        {expandedCollabCode && (
+          <View style={styles.expandedContent}>
+            {loadingCollabCode ? (
+              <ActivityIndicator size="large" color={colors.primary} />
+            ) : collabCodeError ? (
+              <View style={styles.collabCodeError}>
+                <Icon name="exclamation-circle" size={40} color={colors.expense} />
+                <Text style={styles.errorText}>Unable to load code</Text>
+                <TouchableOpacity
+                  style={styles.retryButton}
+                  onPress={loadCollabCode}
+                >
+                  <Text style={styles.retryButtonText}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <>
+                <View style={styles.codeDisplay}>
+                  <Icon name="key" size={20} color={colors.primary} style={styles.keyIcon} />
+                  <Text style={styles.collabCodeText}>{collabCode}</Text>
+                </View>
+                <Text style={styles.collabCodeDescription}>
+                  Share this code with people you want to collaborate with
+                </Text>
+                <View style={styles.collabCodeActions}>
+                  <TouchableOpacity
+                    style={[styles.collabCodeButton, styles.copyButton]}
+                    onPress={handleCopyCollabCode}
+                  >
+                    <Icon name="copy" size={16} color={colors.text.primary} />
+                    <Text style={styles.collabCodeButtonText}>Copy Code</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.collabCodeButton, styles.shareButton]}
+                    onPress={handleShareCollabCode}
+                  >
+                    <Icon name="share-alt" size={16} color={colors.text.primary} />
+                    <Text style={styles.collabCodeButtonText}>Share Code</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </View>
+        )}
       </View>
 
       {/* Settings Menu */}
@@ -1095,20 +1119,6 @@ const SettingsScreen = ({ navigation }) => {
           </View>
         )}
 
-        {/* Invitations & Sharing */}
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => navigation.navigate('Invitations')}
-        >
-          <View style={styles.menuItemLeft}>
-            <View style={[styles.menuIcon, { backgroundColor: colors.glass.background }]}>
-              <Icon name="users" size={20} color={colors.primary} />
-            </View>
-            <Text style={styles.menuItemText}>Invitations & Sharing</Text>
-          </View>
-          <Icon name="chevron-right" size={18} color={colors.text.tertiary} />
-        </TouchableOpacity>
-
         {/* Clear All Data */}
         <TouchableOpacity
           style={styles.menuItem}
@@ -1119,6 +1129,20 @@ const SettingsScreen = ({ navigation }) => {
               <Icon name="trash-alt" size={20} color="#FF6B6B" />
             </View>
             <Text style={[styles.menuItemText, { color: '#FF6B6B' }]}>Clear All Data</Text>
+          </View>
+          <Icon name="chevron-right" size={18} color={colors.text.tertiary} />
+        </TouchableOpacity>
+
+        {/* Manage Subscription */}
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => navigation.navigate('SubscriptionManagement')}
+        >
+          <View style={styles.menuItemLeft}>
+            <View style={[styles.menuIcon, { backgroundColor: colors.glass.background }]}>
+              <Icon name="crown" size={20} color={colors.primary} />
+            </View>
+            <Text style={styles.menuItemText}>Manage Subscription</Text>
           </View>
           <Icon name="chevron-right" size={18} color={colors.text.tertiary} />
         </TouchableOpacity>
@@ -1152,23 +1176,24 @@ const SettingsScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* App Version */}
-      <TouchableOpacity
-        style={styles.versionContainer}
-        onPress={handleShowVersionInfo}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.versionText}>
-          Version {Constants.expoConfig?.version || '1.0.0'} ({Platform.select({
-            ios: Constants.expoConfig?.ios?.buildNumber || '1',
-            android: Constants.expoConfig?.android?.versionCode || '1',
-            default: '1'
-          })})
-        </Text>
-      </TouchableOpacity>
-
-      <View style={{ height: 40 }} />
+      <View style={{ height: 20 }} />
     </ScrollView>
+
+    {/* App Version - Fixed at bottom */}
+    <TouchableOpacity
+      style={styles.versionContainer}
+      onPress={handleShowVersionInfo}
+      activeOpacity={0.7}
+    >
+      <Text style={styles.versionText}>
+        Version {Constants.expoConfig?.version || Constants.manifest?.version || '1.0.0'} (Build {Platform.select({
+          ios: Constants.expoConfig?.ios?.buildNumber || Constants.manifest?.ios?.buildNumber || '1',
+          android: Constants.expoConfig?.android?.versionCode || Constants.manifest?.android?.versionCode || '1',
+          default: '1'
+        })})
+      </Text>
+    </TouchableOpacity>
+  </View>
   );
 };
 
@@ -1176,6 +1201,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
+  },
+  scrollView: {
+    flex: 1,
   },
   centerContainer: {
     flex: 1,
@@ -1635,13 +1663,17 @@ const styles = StyleSheet.create({
   versionContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 30,
-    marginTop: 20,
+    paddingVertical: 12,
+    paddingBottom: 24,
+    backgroundColor: colors.background,
+    borderTopWidth: 0.5,
+    borderTopColor: 'rgba(0, 0, 0, 0.08)',
   },
   versionText: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.text.tertiary,
-    opacity: 0.6,
+    opacity: 0.5,
+    letterSpacing: 0.3,
   },
 });
 
