@@ -28,7 +28,9 @@ import ReportHistoryScreen from './src/screens/ReportHistoryScreen';
 import GoalsDashboardScreen from './src/screens/GoalsDashboardScreen';
 import CreateGoalScreen from './src/screens/CreateGoalScreen';
 import GoalDetailScreen from './src/screens/GoalDetailScreen';
-import SpendingPlanScreen from './src/screens/SpendingPlanScreen';
+import PlanOverviewScreen from './src/screens/PlanOverviewScreen';
+import CreatePlanScreen from './src/screens/CreatePlanScreen';
+import PlanDetailScreen from './src/screens/PlanDetailScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -53,8 +55,6 @@ const TabNavigator = () => (
           iconName = 'receipt';
         } else if (route.name === 'Statistics') {
           iconName = 'chart-pie';
-        } else if (route.name === 'SpendingPlan') {
-          iconName = 'wallet';
         } else if (route.name === 'Settings') {
           iconName = 'cog';
         }
@@ -112,7 +112,6 @@ const TabNavigator = () => (
     <Tab.Screen name="Home" component={HomeScreen} />
     <Tab.Screen name="Records" component={RecordsScreen} />
     <Tab.Screen name="Statistics" component={StatisticsScreen} />
-    <Tab.Screen name="SpendingPlan" component={SpendingPlanScreen} options={{ tabBarLabel: 'Plan' }} />
     <Tab.Screen name="Settings" component={SettingsScreen} />
   </Tab.Navigator>
 );
@@ -182,6 +181,27 @@ const MainStack = () => (
     <Stack.Screen
       name="GoalDetail"
       component={GoalDetailScreen}
+      options={{
+        headerShown: false
+      }}
+    />
+    <Stack.Screen
+      name="PlanOverview"
+      component={PlanOverviewScreen}
+      options={{
+        headerShown: false
+      }}
+    />
+    <Stack.Screen
+      name="CreatePlan"
+      component={CreatePlanScreen}
+      options={{
+        headerShown: false
+      }}
+    />
+    <Stack.Screen
+      name="PlanDetail"
+      component={PlanDetailScreen}
       options={{
         headerShown: false
       }}

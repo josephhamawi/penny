@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,11 +6,16 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { FontAwesome5 as Icon } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import Toast from 'react-native-toast-message';
 import { useSubscription } from '../hooks/useSubscription';
+import { useAuth } from '../contexts/AuthContext';
 import { colors, shadows, typography } from '../theme/colors';
+import { redeemPromoCode, getUserPromoStatus } from '../services/promoCodeService';
 
 /**
  * Subscription Management Screen
@@ -25,9 +30,79 @@ import { colors, shadows, typography } from '../theme/colors';
  * - Manage subscription options
  * - Support links
  */
-const SubscriptionManagementScreen = ({ navigation }) => {
+const SubscriptionManagementScreen = ({ navigation, route }) => {
   const { isPremium, subscriptionStatus } = useSubscription();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
+
+  // Promo code states - check if promo code was passed from Settings
+  const [promoCode, setPromoCode] = useState(route.params?.promoCode || '');
+  const [promoStatus, setPromoStatus] = useState(null);
+  const [redeeming, setRedeeming] = useState(false);
+
+  // Load promo status on mount
+  useEffect(() => {
+    if (user) {
+      loadPromoStatus();
+    }
+  }, [user]);
+
+  const loadPromoStatus = async () => {
+    try {
+      const status = await getUserPromoStatus(user.uid);
+      setPromoStatus(status);
+    } catch (error) {
+      console.error('[SubscriptionManagement] Error loading promo status:', error);
+    }
+  };
+
+  const handleRedeemPromoCode = async () => {
+    if (!promoCode.trim()) {
+      Toast.show({
+        type: 'error',
+        text1: 'Invalid Code',
+        text2: 'Please enter a promo code',
+        position: 'bottom',
+      });
+      return;
+    }
+
+    setRedeeming(true);
+    try {
+      const result = await redeemPromoCode(promoCode.trim(), user.uid);
+
+      if (result.success) {
+        Toast.show({
+          type: 'success',
+          text1: 'Success!',
+          text2: result.message,
+          position: 'bottom',
+          visibilityTime: 4000,
+        });
+        setPromoCode('');
+        await loadPromoStatus();
+        // Navigate away or refresh
+        navigation.goBack();
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Invalid Code',
+          text2: result.message,
+          position: 'bottom',
+        });
+      }
+    } catch (error) {
+      console.error('[SubscriptionManagement] Error redeeming promo code:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to redeem promo code',
+        position: 'bottom',
+      });
+    } finally {
+      setRedeeming(false);
+    }
+  };
 
   // MOCK DATA - Will be replaced with real data
   const mockSubscriptionData = {
@@ -135,6 +210,52 @@ const SubscriptionManagementScreen = ({ navigation }) => {
                 </View>
               ))}
             </View>
+
+            {/* Promo Code Section */}
+            {promoStatus?.hasPromoAccess ? (
+              <View style={styles.promoActiveSection}>
+                <View style={styles.promoActiveHeader}>
+                  <Icon name="ticket-alt" size={24} color={colors.income} />
+                  <View style={styles.promoActiveTextContainer}>
+                    <Text style={styles.promoActiveTitle}>Promo Access Active</Text>
+                    <Text style={styles.promoActiveCode}>Code: {promoStatus.promoCode}</Text>
+                  </View>
+                </View>
+                <Text style={styles.promoActiveMessage}>
+                  You have full access to all AI features via promo code!
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.promoCodeSection}>
+                <Text style={styles.promoCodeTitle}>Have a promo code?</Text>
+                <Text style={styles.promoCodeSubtitle}>
+                  Get free access to premium AI features
+                </Text>
+                <View style={styles.promoCodeInputContainer}>
+                  <TextInput
+                    style={styles.promoCodeInput}
+                    placeholder="Enter promo code"
+                    placeholderTextColor={colors.text.tertiary}
+                    value={promoCode}
+                    onChangeText={setPromoCode}
+                    autoCapitalize="characters"
+                    autoCorrect={false}
+                    editable={!redeeming}
+                  />
+                  <TouchableOpacity
+                    style={[styles.redeemButton, redeeming && styles.redeemButtonDisabled]}
+                    onPress={handleRedeemPromoCode}
+                    disabled={redeeming}
+                  >
+                    {redeeming ? (
+                      <ActivityIndicator color={colors.text.primary} size="small" />
+                    ) : (
+                      <Text style={styles.redeemButtonText}>Redeem</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
           </View>
         </ScrollView>
       </View>
@@ -450,6 +571,93 @@ const styles = StyleSheet.create({
     color: colors.warning,
     marginLeft: 10,
     flex: 1,
+  },
+  // Promo Code Styles
+  promoCodeSection: {
+    backgroundColor: colors.glass.background,
+    borderRadius: 16,
+    padding: 20,
+    marginTop: 30,
+    borderWidth: 1,
+    borderColor: colors.glass.border,
+    ...shadows.md,
+  },
+  promoCodeTitle: {
+    ...typography.h4,
+    marginBottom: 5,
+    textAlign: 'center',
+  },
+  promoCodeSubtitle: {
+    ...typography.caption,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  promoCodeInputContainer: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  promoCodeInput: {
+    flex: 1,
+    backgroundColor: colors.backgroundLight,
+    paddingHorizontal: 15,
+    paddingVertical: 12,
+    borderRadius: 10,
+    ...typography.body,
+    borderWidth: 1,
+    borderColor: colors.glass.borderLight,
+    color: colors.text.primary,
+  },
+  redeemButton: {
+    backgroundColor: colors.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 100,
+    ...shadows.sm,
+  },
+  redeemButtonDisabled: {
+    opacity: 0.5,
+  },
+  redeemButtonText: {
+    color: colors.text.primary,
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  promoActiveSection: {
+    backgroundColor: 'rgba(52, 211, 153, 0.1)',
+    borderRadius: 16,
+    padding: 20,
+    marginTop: 30,
+    borderWidth: 2,
+    borderColor: colors.income,
+    ...shadows.md,
+  },
+  promoActiveHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 15,
+  },
+  promoActiveTextContainer: {
+    flex: 1,
+  },
+  promoActiveTitle: {
+    ...typography.h4,
+    color: colors.income,
+    marginBottom: 4,
+  },
+  promoActiveCode: {
+    ...typography.caption,
+    color: colors.text.secondary,
+    fontWeight: '600',
+  },
+  promoActiveMessage: {
+    ...typography.body,
+    color: colors.text.secondary,
+    textAlign: 'center',
   },
 });
 

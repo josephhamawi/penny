@@ -38,6 +38,7 @@ import { manualSyncToSheets, clearAllExpenses } from '../services/expenseService
 import { getUserDatabaseId } from '../services/invitationService';
 import { getUserCollabCode } from '../services/collabCodeService';
 import { deleteAccount } from '../services/accountDeletionService';
+import { createPromoCode } from '../services/promoCodeService';
 import { formatCurrency } from '../utils/formatNumber';
 import { colors, shadows, typography } from '../theme/colors';
 import firebase, { auth } from '../config/firebase';
@@ -509,6 +510,53 @@ const SettingsScreen = ({ navigation }) => {
         }
       ]
     );
+  };
+
+  // DEV ONLY: Create test promo code
+  const handleCreateTestPromoCode = async () => {
+    console.log('[CreatePromo] Creating test promo code...');
+
+    try {
+      const promoCodeValue = 'DEV-TEST-2024';
+      const result = await createPromoCode({
+        code: promoCodeValue,
+        type: 'full_access',
+        maxUses: null,
+        expiresAt: null,
+        createdBy: 'dev_settings'
+      });
+
+      if (result.success) {
+        Toast.show({
+          type: 'success',
+          text1: 'Promo Code Created!',
+          text2: `Code: ${promoCodeValue}`
+        });
+
+        // Navigate to SubscriptionManagement with promo code pre-filled
+        navigation.navigate('SubscriptionManagement', {
+          promoCode: promoCodeValue
+        });
+      } else if (result.message.includes('already exists')) {
+        // Code already exists - that's fine, just navigate with it
+        console.log('[CreatePromo] Code already exists, using existing code');
+        Toast.show({
+          type: 'info',
+          text1: 'Using Existing Code',
+          text2: `Code: ${promoCodeValue}`
+        });
+
+        // Navigate to SubscriptionManagement with promo code pre-filled
+        navigation.navigate('SubscriptionManagement', {
+          promoCode: promoCodeValue
+        });
+      } else {
+        Alert.alert('Error', result.message);
+      }
+    } catch (error) {
+      console.error('[CreatePromo] Error:', error);
+      Alert.alert('Error', 'Failed to create promo code');
+    }
   };
 
   const handleShowVersionInfo = () => {
@@ -1161,6 +1209,20 @@ const SettingsScreen = ({ navigation }) => {
           <Icon name="chevron-right" size={18} color={colors.text.tertiary} />
         </TouchableOpacity>
 
+        {/* DEV ONLY: Create Promo Code */}
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={handleCreateTestPromoCode}
+        >
+          <View style={styles.menuItemLeft}>
+            <View style={[styles.menuIcon, { backgroundColor: colors.glass.background }]}>
+              <Icon name="code" size={20} color="#10B981" />
+            </View>
+            <Text style={[styles.menuItemText, { color: '#10B981' }]}>Create Test Promo Code</Text>
+          </View>
+          <Icon name="chevron-right" size={18} color={colors.text.tertiary} />
+        </TouchableOpacity>
+
         {/* Logout */}
         <TouchableOpacity
           style={styles.menuItem}
@@ -1174,25 +1236,25 @@ const SettingsScreen = ({ navigation }) => {
           </View>
           <Icon name="chevron-right" size={18} color={colors.text.tertiary} />
         </TouchableOpacity>
+
+        {/* App Version */}
+        <TouchableOpacity
+          style={styles.versionContainerInline}
+          onPress={handleShowVersionInfo}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.versionText}>
+            Version {Constants.expoConfig?.version || Constants.manifest?.version || '1.0.0'} (Build {Platform.select({
+              ios: Constants.expoConfig?.ios?.buildNumber || Constants.manifest?.ios?.buildNumber || '1',
+              android: Constants.expoConfig?.android?.versionCode || Constants.manifest?.android?.versionCode || '1',
+              default: '1'
+            })})
+          </Text>
+        </TouchableOpacity>
       </View>
 
-      <View style={{ height: 20 }} />
+      <View style={{ height: 100 }} />
     </ScrollView>
-
-    {/* App Version - Fixed at bottom */}
-    <TouchableOpacity
-      style={styles.versionContainer}
-      onPress={handleShowVersionInfo}
-      activeOpacity={0.7}
-    >
-      <Text style={styles.versionText}>
-        Version {Constants.expoConfig?.version || Constants.manifest?.version || '1.0.0'} (Build {Platform.select({
-          ios: Constants.expoConfig?.ios?.buildNumber || Constants.manifest?.ios?.buildNumber || '1',
-          android: Constants.expoConfig?.android?.versionCode || Constants.manifest?.android?.versionCode || '1',
-          default: '1'
-        })})
-      </Text>
-    </TouchableOpacity>
   </View>
   );
 };
@@ -1668,6 +1730,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     borderTopWidth: 0.5,
     borderTopColor: 'rgba(0, 0, 0, 0.08)',
+  },
+  versionContainerInline: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    backgroundColor: colors.glass.background,
   },
   versionText: {
     fontSize: 11,

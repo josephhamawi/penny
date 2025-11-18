@@ -16,6 +16,7 @@
 import Purchases from 'react-native-purchases';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import { getUserPromoStatus } from './promoCodeService';
 
 // Constants
 const SUBSCRIPTION_CACHE_KEY = '@expense_monitor:subscription_status';
@@ -587,9 +588,62 @@ export default {
   // Utility
   openManageSubscription,
   clearSubscriptionCache,
+  hasAIFeatureAccess,
 
   // Constants
   PRODUCT_IDS,
   ENTITLEMENT_ID,
   SUBSCRIPTION_STATUS,
 };
+
+/**
+ * Check if user has AI feature access (subscription OR promo code)
+ *
+ * @param {string} userId - The user ID to check
+ * @returns {Promise<{hasAccess: boolean, source: 'subscription'|'promo'|'none', promoCode?: string}>}
+ */
+export async function hasAIFeatureAccess(userId) {
+  try {
+    // First check promo access (faster, no RevenueCat call needed)
+    const promoStatus = await getUserPromoStatus(userId);
+
+    if (promoStatus.hasPromoAccess) {
+      console.log('[SubscriptionService] AI access granted via promo code:', promoStatus.promoCode);
+      return {
+        hasAccess: true,
+        source: 'promo',
+        promoCode: promoStatus.promoCode
+      };
+    }
+
+    // Check subscription status
+    const status = await checkSubscriptionStatus();
+
+    const hasSubscription = [
+      SUBSCRIPTION_STATUS.TRIAL,
+      SUBSCRIPTION_STATUS.ACTIVE,
+      SUBSCRIPTION_STATUS.LIFETIME
+    ].includes(status);
+
+    if (hasSubscription) {
+      console.log('[SubscriptionService] AI access granted via subscription:', status);
+      return {
+        hasAccess: true,
+        source: 'subscription'
+      };
+    }
+
+    // No access
+    return {
+      hasAccess: false,
+      source: 'none'
+    };
+
+  } catch (error) {
+    console.error('[SubscriptionService] Error checking AI feature access:', error);
+    return {
+      hasAccess: false,
+      source: 'none'
+    };
+  }
+}

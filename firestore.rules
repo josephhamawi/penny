@@ -53,6 +53,18 @@ service cloud.firestore {
         // Allow read/write if user owns this data OR is a member of the shared database
         allow read, write: if isOwner(userId) || isMember(userId);
       }
+
+      // Plans collection (new Plan feature)
+      match /plans/{planId} {
+        // Allow read/write if user owns this data OR is a member of the shared database
+        allow read, write: if isOwner(userId) || isMember(userId);
+      }
+
+      // Plan Allocations collection (virtual ledger)
+      match /planAllocations/{allocationId} {
+        // Allow read/write if user owns this data OR is a member of the shared database
+        allow read, write: if isOwner(userId) || isMember(userId);
+      }
     }
 
     // Invitations collection
@@ -119,6 +131,16 @@ service cloud.firestore {
     match /landing_contact_messages/{messageId} {
       allow create: if true; // Anyone can submit contact messages
       allow read, update, delete: if request.auth != null; // Only authenticated admin can read
+    }
+
+    // Promo Codes Collection
+    match /promoCodes/{codeId} {
+      // Allow authenticated users to read (needed for validation)
+      allow read: if request.auth != null;
+      // TEMPORARY: Allow authenticated users to create promo codes for testing
+      allow create: if request.auth != null;
+      // Only allow admin to update/delete
+      allow update, delete: if false;
     }
 
     // Deny all other paths by default

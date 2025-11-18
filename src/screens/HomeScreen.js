@@ -161,6 +161,33 @@ const HomeScreen = ({ navigation }) => {
         </View>
       </View>
 
+      {/* Plan Feature Card */}
+      <TouchableOpacity
+        style={styles.featureCard}
+        onPress={() => navigation.navigate('PlanOverview')}
+        activeOpacity={0.8}
+      >
+        <LinearGradient
+          colors={['#1E3A8A', '#3B82F6']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.featureCardGradient}
+        >
+          <View style={styles.featureCardContent}>
+            <View style={styles.featureIconContainer}>
+              <Icon name="piggy-bank" size={32} color="#FFFFFF" solid />
+            </View>
+            <View style={styles.featureTextContainer}>
+              <Text style={styles.featureTitle}>My Plans</Text>
+              <Text style={styles.featureSubtitle}>
+                Automatic savings from income
+              </Text>
+            </View>
+            <Icon name="chevron-right" size={20} color="rgba(255, 255, 255, 0.8)" />
+          </View>
+        </LinearGradient>
+      </TouchableOpacity>
+
       {/* Upgrade Banner for Free Users */}
       {!isPremium && showUpgradeBanner && (
         <View style={styles.upgradeBanner}>
@@ -319,6 +346,42 @@ const styles = StyleSheet.create({
     borderColor: colors.glass.borderLight,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  featureCard: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+    borderRadius: 16,
+    overflow: 'hidden',
+    ...shadows.lg,
+  },
+  featureCardGradient: {
+    padding: 20,
+  },
+  featureCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  featureIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  featureTextContainer: {
+    flex: 1,
+  },
+  featureTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  featureSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
   },
   upgradeBanner: {
     flexDirection: 'row',
