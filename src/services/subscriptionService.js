@@ -53,6 +53,13 @@ export const SUBSCRIPTION_STATUS = {
  */
 export const checkSubscriptionStatus = async () => {
   try {
+    // DEV MODE: Enable AI features in simulator for testing
+    if (__DEV__) {
+      console.log('[SubscriptionService] DEV MODE: Granting premium access for testing');
+      await AsyncStorage.setItem(SUBSCRIPTION_CACHE_KEY, SUBSCRIPTION_STATUS.ACTIVE);
+      return SUBSCRIPTION_STATUS.ACTIVE;
+    }
+
     const customerInfo = await Purchases.getCustomerInfo();
 
     // Check if user has "premium" entitlement
@@ -93,7 +100,10 @@ export const checkSubscriptionStatus = async () => {
     // Suppress error in development if RevenueCat is not initialized (expected in Expo Go)
     if (__DEV__ && error.message && error.message.includes('singleton instance')) {
       // This is expected in Expo Go - RevenueCat requires EAS Build
-      // Silently return NONE status
+      // Grant premium access in development for testing
+      console.log('[SubscriptionService] DEV MODE: RevenueCat not initialized, granting premium access for testing');
+      await AsyncStorage.setItem(SUBSCRIPTION_CACHE_KEY, SUBSCRIPTION_STATUS.ACTIVE);
+      return SUBSCRIPTION_STATUS.ACTIVE;
     } else {
       console.error('[SubscriptionService] Error checking subscription:', error);
     }
