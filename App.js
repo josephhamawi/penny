@@ -18,6 +18,7 @@ import RegisterScreen from './src/screens/RegisterScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import RecordsScreen from './src/screens/RecordsScreen';
 import StatisticsScreen from './src/screens/StatisticsScreen';
+import SpendingPlanScreen from './src/screens/SpendingPlanScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import AddExpenseScreen from './src/screens/AddExpenseScreen';
 import EditExpenseScreen from './src/screens/EditExpenseScreen';
@@ -55,6 +56,8 @@ const TabNavigator = () => (
           iconName = 'receipt';
         } else if (route.name === 'Statistics') {
           iconName = 'chart-pie';
+        } else if (route.name === 'SpendingPlan') {
+          iconName = 'wallet';
         } else if (route.name === 'Settings') {
           iconName = 'cog';
         }
@@ -112,6 +115,11 @@ const TabNavigator = () => (
     <Tab.Screen name="Home" component={HomeScreen} />
     <Tab.Screen name="Records" component={RecordsScreen} />
     <Tab.Screen name="Statistics" component={StatisticsScreen} />
+    <Tab.Screen
+      name="SpendingPlan"
+      component={SpendingPlanScreen}
+      options={{ tabBarLabel: 'Plan' }}
+    />
     <Tab.Screen name="Settings" component={SettingsScreen} />
   </Tab.Navigator>
 );

@@ -1,14 +1,15 @@
 # Expense Monitor Premium - Product Requirements Document (PRD)
 
 ## Document Information
-**Version:** 1.0
-**Date:** 2025-11-07
+**Version:** 1.1
+**Date:** 2025-11-20
 **Author:** John (Product Manager)
 **Status:** Draft for Review
 
 ## Change Log
 | Date | Version | Description | Author |
 |------|---------|-------------|--------|
+| 2025-11-20 | 1.1 | Clarified budgeting approach: "My Plans" feature for automatic savings allocation | John |
 | 2025-11-07 | 1.0 | Initial PRD for Premium AI Features & Multi-User Support | John |
 
 ---
@@ -30,6 +31,37 @@ Expense Monitor currently provides solid basic expense tracking with Google Shee
 AI-powered financial insights represent a significant differentiation opportunity. While many apps track expenses, few provide personalized, actionable guidance that helps users actually improve their financial behavior. By combining predictive analytics for goal achievement with personality-driven spending reports, we create an engaging premium experience that users will value and share.
 
 This PRD focuses on three interconnected initiatives: securing user data isolation, implementing in-app purchase infrastructure, and delivering two flagship AI features. Success means converting 5-10% of free users to paid subscribers through demonstrable value.
+
+---
+
+## Budgeting & Planning Approach
+
+### My Plans Feature (Core Budgeting Solution)
+
+**Decision:** The app uses **"My Plans"** as the primary budgeting and savings feature, which provides automatic savings allocation based on income.
+
+**How My Plans Works:**
+- Users create savings plans with a **percentage of income** allocated to each goal (e.g., "Travel Fund: 10%", "Emergency Savings: 5%")
+- When income is detected in the expense tracker, the system **automatically calculates and tracks** virtual allocations to each active plan
+- Users see their **cumulative savings progress** toward goals without the allocated funds affecting their visible account balance
+- The feature includes **projections, health scores, and recommendations** to help users achieve their savings targets
+
+**Key Differentiators:**
+- **Automatic allocation:** No manual transfers needed - allocations happen automatically when income is logged
+- **Virtual ledger:** Allocated savings are tracked separately from the main balance, creating psychological separation
+- **Goal-oriented:** Each plan has a specific purpose (vacation, emergency fund, new car, etc.)
+- **Predictive insights:** Projections show when goals will be achieved based on income patterns
+
+**Why My Plans (vs. Traditional Budget Tracking):**
+1. **Forward-looking:** Focuses on savings goals rather than spending limits
+2. **Behavioral psychology:** Virtual allocation creates mental accounting that reduces overspending
+3. **Automation:** Reduces cognitive load - users don't need to manually track or move money
+4. **Flexibility:** Percentage-based allocations adapt to income fluctuations
+5. **Motivation:** Clear progress visualization and achievement predictions keep users engaged
+
+**Implementation Status:** ✅ Fully implemented and production-ready (see `/docs/PLAN_FEATURE_README.md`)
+
+**Note:** This PRD does not include percentage-based spending budgets or category allocation limits. The "My Plans" feature focuses exclusively on automated savings allocation to help users achieve specific financial goals.
 
 ---
 

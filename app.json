@@ -3,8 +3,11 @@
     "name": "Penny",
     "slug": "expense-monitor",
     "version": "1.0.0",
+    "description": "Track your income and expenses effortlessly with AI-powered insights and smart savings plans. Penny helps you understand your spending personality and achieve your financial goals.",
+    "primaryCategory": "FINANCE",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
+    "privacy": "public",
     "icon": "./public/newicon.png",
     "adaptiveIcon": {
       "foregroundImage": "./public/newicon.png",
@@ -22,8 +25,8 @@
       "backgroundColor": "#0A0E27"
     },
     "ios": {
-      "bundleIdentifier": "com.yourname.penny.expenses",
-      "buildNumber": "1.0.0",
+      "bundleIdentifier": "com.penny.expenses",
+      "buildNumber": "1",
       "supportsTablet": true,
       "backgroundColor": "#0A0E27",
       "infoPlist": {

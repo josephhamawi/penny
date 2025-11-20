@@ -20,12 +20,14 @@ import PremiumBadge from '../components/PremiumBadge';
 import LockedFeatureCard from '../components/LockedFeatureCard';
 import { colors, shadows, typography } from '../theme/colors';
 import { startSheetPolling } from '../services/sheetPollingService';
+import { subscribeToSpendingPlan } from '../services/spendingPlanService';
 
 const HomeScreen = ({ navigation }) => {
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [monthlyBudget, setMonthlyBudget] = useState(5000);
   const [showUpgradeBanner, setShowUpgradeBanner] = useState(true);
+  const [spendingPlan, setSpendingPlan] = useState(null);
   const { user } = useAuth();
   const { isPremium } = useSubscription();
 
@@ -55,14 +57,22 @@ const HomeScreen = ({ navigation }) => {
     }
 
     setLoading(true);
-    const unsubscribe = subscribeToExpenses(user.uid, (updatedExpenses) => {
+    const unsubscribeExpenses = subscribeToExpenses(user.uid, (updatedExpenses) => {
       setExpenses(updatedExpenses);
       setLoading(false);
     });
 
+    // Subscribe to spending plan updates
+    const unsubscribePlan = subscribeToSpendingPlan(user.uid, (updatedPlan) => {
+      setSpendingPlan(updatedPlan);
+    });
+
     return () => {
-      if (unsubscribe) {
-        unsubscribe();
+      if (unsubscribeExpenses) {
+        unsubscribeExpenses();
+      }
+      if (unsubscribePlan) {
+        unsubscribePlan();
       }
     };
   }, [user]);
@@ -90,6 +100,43 @@ const HomeScreen = ({ navigation }) => {
 
   // Get recent expenses (last 5)
   const recentExpenses = expenses.slice(0, 5);
+
+  // Helper to check if date is in current month
+  const isCurrentMonth = (date) => {
+    const now = new Date();
+    const expenseDate = date instanceof Date ? date : date.toDate();
+    return expenseDate.getMonth() === now.getMonth() &&
+           expenseDate.getFullYear() === now.getFullYear();
+  };
+
+  // Get top 3 categories from spending plan with progress
+  const getTopSpendingCategories = () => {
+    if (!spendingPlan || !spendingPlan.allocations) return [];
+
+    // Filter to categories with percentage > 0 and sort by percentage (descending)
+    const activeAllocations = spendingPlan.allocations
+      .filter(alloc => alloc.percentage > 0)
+      .sort((a, b) => b.percentage - a.percentage)
+      .slice(0, 3);
+
+    // Calculate progress for each
+    return activeAllocations.map(allocation => {
+      const planned = allocation.targetAmount || 0;
+      const actual = currentMonthExpenses
+        .filter(e => e.category === allocation.categoryName)
+        .reduce((sum, e) => sum + (e.outAmount || 0), 0);
+
+      const percentage = planned > 0 ? (actual / planned) * 100 : 0;
+
+      return {
+        ...allocation,
+        actual,
+        percentage: Math.min(percentage, 100)
+      };
+    });
+  };
+
+  const topCategories = getTopSpendingCategories();
 
   if (loading) {
     return (
@@ -187,6 +234,61 @@ const HomeScreen = ({ navigation }) => {
           </View>
         </LinearGradient>
       </TouchableOpacity>
+
+      {/* Spending Plan Overview Widget */}
+      {spendingPlan && topCategories.length > 0 && (
+        <TouchableOpacity
+          style={styles.spendingPlanWidget}
+          onPress={() => navigation.navigate('SpendingPlan')}
+          activeOpacity={0.8}
+        >
+          <View style={styles.widgetHeader}>
+            <View style={styles.widgetTitleContainer}>
+              <Icon name="wallet" size={20} color={colors.primary} solid />
+              <Text style={styles.widgetTitle}>Spending Plan</Text>
+            </View>
+            <Icon name="chevron-right" size={16} color={colors.text.tertiary} />
+          </View>
+
+          <View style={styles.widgetCategories}>
+            {topCategories.map((category, index) => {
+              const categoryConfig = getCategoryConfig(category.categoryName);
+              const progressColor = category.percentage <= 80
+                ? colors.success
+                : category.percentage <= 100
+                ? colors.warning
+                : colors.error;
+
+              return (
+                <View key={category.categoryId || index} style={styles.widgetCategory}>
+                  <View style={styles.widgetCategoryHeader}>
+                    <View style={[styles.widgetCategoryIcon, { backgroundColor: categoryConfig.bgColor }]}>
+                      <Icon name={categoryConfig.icon} size={12} color={categoryConfig.color} solid />
+                    </View>
+                    <Text style={styles.widgetCategoryName} numberOfLines={1}>
+                      {category.categoryName}
+                    </Text>
+                    <Text style={styles.widgetCategoryAmount}>
+                      ${formatCurrency(category.actual)} / ${formatCurrency(category.targetAmount)}
+                    </Text>
+                  </View>
+                  <View style={styles.widgetProgressBar}>
+                    <View
+                      style={[
+                        styles.widgetProgressFill,
+                        {
+                          width: `${category.percentage}%`,
+                          backgroundColor: progressColor
+                        }
+                      ]}
+                    />
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        </TouchableOpacity>
+      )}
 
       {/* Upgrade Banner for Free Users */}
       {!isPremium && showUpgradeBanner && (
@@ -569,6 +671,72 @@ const styles = StyleSheet.create({
   emptyRecordsText: {
     color: colors.text.tertiary,
     fontSize: 14,
+  },
+  // Spending Plan Widget Styles
+  spendingPlanWidget: {
+    backgroundColor: colors.glass.background,
+    borderWidth: 1,
+    borderColor: colors.glass.borderLight,
+    borderRadius: 20,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    padding: 16,
+    ...shadows.sm,
+  },
+  widgetHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  widgetTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  widgetTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text.primary,
+  },
+  widgetCategories: {
+    gap: 12,
+  },
+  widgetCategory: {
+    gap: 6,
+  },
+  widgetCategoryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  widgetCategoryIcon: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  widgetCategoryName: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  widgetCategoryAmount: {
+    fontSize: 12,
+    color: colors.text.secondary,
+    fontWeight: '500',
+  },
+  widgetProgressBar: {
+    height: 6,
+    backgroundColor: colors.glass.backgroundMedium,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  widgetProgressFill: {
+    height: '100%',
+    borderRadius: 3,
   },
 });
 
