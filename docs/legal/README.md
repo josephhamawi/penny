@@ -19,8 +19,8 @@ This folder contains the Privacy Policy and Terms of Service for the Penny mobil
 
 2. **URLs will be:**
    ```
-   https://yourusername.github.io/penny/legal/privacy-policy.html
-   https://yourusername.github.io/penny/legal/terms.html
+   https://josephhamawi.github.io/penny/legal/privacy-policy.html
+   https://josephhamawi.github.io/penny/legal/terms.html
    ```
 
 3. **Update PaywallScreen.js** with these URLs

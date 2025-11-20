@@ -59,14 +59,14 @@
 - [x] **Subtitle:** Smart Expense Tracking (max 30 chars)
 - [x] **Description:** ✅ Written (see DEPLOYMENT-CHECKLIST.md)
 - [x] **Keywords:** `expense tracker,budget,finance,savings,money,bills,spending,goals,income`
-- [x] **Support URL:** `https://yourusername.github.io/Expenses/` (⚠️ update "yourusername")
+- [x] **Support URL:** `https://josephhamawi.github.io/penny/` (⚠️ update "yourusername")
 - [ ] **Marketing URL:** (Optional - can leave empty)
 - [x] **Primary Category:** Finance
 - [ ] **Secondary Category:** Productivity (optional)
 - [x] **Age Rating:** 4+ (no objectionable content)
 
 **Privacy:**
-- [x] **Privacy Policy URL:** `https://yourusername.github.io/Expenses/legal/privacy-policy.html`
+- [x] **Privacy Policy URL:** `https://josephhamawi.github.io/penny/legal/privacy-policy.html`
 - [x] **Privacy Questionnaire:** ⚠️ **TODO:** Complete in App Store Connect
   - **Data Collection:**
     - ✅ Contact Info (email)
@@ -353,11 +353,11 @@ This account has pre-populated sample data for testing all features.
 ## Support
 - Email: support@pennyapp.com
 - Response time: Within 24 hours
-- Website: https://yourusername.github.io/Expenses/
+- Website: https://josephhamawi.github.io/penny/
 
 ## Legal
-- Privacy Policy: https://yourusername.github.io/Expenses/legal/privacy-policy.html
-- Terms of Service: https://yourusername.github.io/Expenses/legal/terms.html
+- Privacy Policy: https://josephhamawi.github.io/penny/legal/privacy-policy.html
+- Terms of Service: https://josephhamawi.github.io/penny/legal/terms.html
 
 ## Notes for Reviewers
 - All features are functional and accessible

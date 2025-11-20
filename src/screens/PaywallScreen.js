@@ -210,11 +210,11 @@ const PaywallScreen = ({ navigation, route }) => {
 
       {/* Legal Links */}
       <View style={styles.legalLinks}>
-        <TouchableOpacity onPress={() => openURL('https://yourusername.github.io/Expenses/legal/terms.html')}>
+        <TouchableOpacity onPress={() => openURL('https://josephhamawi.github.io/penny/legal/terms.html')}>
           <Text style={styles.linkText}>Terms of Service</Text>
         </TouchableOpacity>
         <Text style={styles.separator}>•</Text>
-        <TouchableOpacity onPress={() => openURL('https://yourusername.github.io/Expenses/legal/privacy-policy.html')}>
+        <TouchableOpacity onPress={() => openURL('https://josephhamawi.github.io/penny/legal/privacy-policy.html')}>
           <Text style={styles.linkText}>Privacy Policy</Text>
         </TouchableOpacity>
       </View>

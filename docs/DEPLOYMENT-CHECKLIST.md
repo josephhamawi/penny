@@ -36,7 +36,7 @@
 2. Source: Deploy from branch `main`
 3. Folder: `/docs`
 4. Save
-5. **Note the URL:** `https://yourusername.github.io/Expenses/`
+5. **Note the URL:** `https://josephhamawi.github.io/penny/`
 6. **Update PaywallScreen.js** lines 213 & 217:
    - Replace `yourusername` with your actual GitHub username
    - Test URLs work before submitting to App Store
@@ -205,7 +205,7 @@ eas submit --platform ios
   - Financial Info (expenses - stored locally)
   - User Content (expense descriptions)
   - Usage Data (analytics)
-- [ ] **Link Privacy Policy:** `https://yourusername.github.io/Expenses/legal/privacy-policy.html`
+- [ ] **Link Privacy Policy:** `https://josephhamawi.github.io/penny/legal/privacy-policy.html`
 
 ### Step 4: In-App Purchases
 
@@ -256,12 +256,12 @@ SUBSCRIPTION:
 • 14-day free trial for monthly subscription
 • Cancel anytime in your App Store settings
 
-Privacy Policy: https://yourusername.github.io/Expenses/legal/privacy-policy.html
-Terms of Service: https://yourusername.github.io/Expenses/legal/terms.html
+Privacy Policy: https://josephhamawi.github.io/penny/legal/privacy-policy.html
+Terms of Service: https://josephhamawi.github.io/penny/legal/terms.html
 ```
 
 - [ ] **Keywords:** `expense tracker,budget,finance,savings,money,bills,spending,goals,income`
-- [ ] **Support URL:** `https://yourusername.github.io/Expenses/`
+- [ ] **Support URL:** `https://josephhamawi.github.io/penny/`
 - [ ] **Marketing URL:** (optional)
 
 ### Step 6: App Review Information

@@ -136,7 +136,7 @@ EXPO_PUBLIC_OPENAI_API_KEY=sk-proj-tOTZBa...
 **Option B: GitHub Pages** (Free hosting)
 1. Create `/docs/privacy.html` and `/docs/terms.html`
 2. Enable GitHub Pages in repo settings
-3. URLs will be: `https://yourusername.github.io/penny/privacy.html`
+3. URLs will be: `https://josephhamawi.github.io/penny/privacy.html`
 
 **Required Content:**
 - **Privacy Policy:** Must include data collection, usage, sharing, user rights, GDPR/CCPA compliance
