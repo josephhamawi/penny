@@ -34,7 +34,8 @@
         "UIViewControllerBasedStatusBarAppearance": false,
         "UIStatusBarStyle": "UIStatusBarStyleLightContent",
         "NSFaceIDUsageDescription": "Allow Penny to use Face ID for secure and quick authentication.",
-        "NSPhotoLibraryUsageDescription": "Allow Penny to access your photo library to set your profile picture."
+        "NSPhotoLibraryUsageDescription": "Allow Penny to access your photo library to set your profile picture.",
+        "NSUserNotificationsUsageDescription": "Allow Penny to send you notifications about your spending and budget updates."
       }
     },
     "android": {
@@ -58,6 +59,15 @@
       "ios",
       "android",
       "web"
+    ],
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./public/newicon.png",
+          "color": "#00D9FF"
+        }
+      ]
     ],
     "extra": {
       "eas": {
