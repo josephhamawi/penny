@@ -46,9 +46,43 @@
         body {
             font-family: 'Poppins', sans-serif;
         }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        .toast-enter {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+
+        .toast-exit {
+            animation: slideOut 0.3s ease-in forwards;
+        }
     </style>
 </head>
 <body class="bg-slate-50">
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="fixed top-4 right-4 z-[100] space-y-3 pointer-events-none">
+    </div>
 
     <!-- Login Screen -->
     <div id="loginScreen" class="min-h-screen flex items-center justify-center px-4">
@@ -376,6 +410,7 @@
                                     <option value="investing">Investing</option>
                                     <option value="news">Company News</option>
                                     <option value="tutorials">Tutorials</option>
+                                    <option value="story">Story</option>
                                 </select>
                             </div>
                             <div>
@@ -573,6 +608,57 @@
     <!-- JavaScript -->
     <script>
         // ========================================
+        // TOAST NOTIFICATION SYSTEM
+        // ========================================
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+
+            const toastId = 'toast-' + Date.now();
+            const toast = document.createElement('div');
+            toast.id = toastId;
+            toast.className = 'toast-enter pointer-events-auto';
+
+            const bgColors = {
+                'success': 'bg-green-500',
+                'error': 'bg-red-500',
+                'warning': 'bg-amber-500',
+                'info': 'bg-blue-500'
+            };
+
+            const icons = {
+                'success': '✓',
+                'error': '✕',
+                'warning': '⚠',
+                'info': 'ℹ'
+            };
+
+            toast.innerHTML = `
+                <div class="${bgColors[type] || bgColors.info} text-white px-6 py-4 rounded-lg shadow-2xl flex items-center gap-3 min-w-[320px] max-w-md">
+                    <span class="text-2xl">${icons[type] || icons.info}</span>
+                    <span class="flex-1 font-medium">${message}</span>
+                    <button onclick="closeToast('${toastId}')" class="text-white/80 hover:text-white transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => closeToast(toastId), 5000);
+        }
+
+        function closeToast(toastId) {
+            const toast = document.getElementById(toastId);
+            if (toast) {
+                toast.classList.remove('toast-enter');
+                toast.classList.add('toast-exit');
+                setTimeout(() => toast.remove(), 300);
+            }
+        }
+
+        // ========================================
         // FIREBASE CONFIGURATION (Same project, separate collections)
         // ========================================
         const firebaseConfig = {
@@ -709,7 +795,7 @@
                 }, 1000);
             } catch (error) {
                 console.error('Error refreshing data:', error);
-                alert('Error refreshing data. Please try again.');
+                showToast('Error refreshing data. Please try again.', 'error');
             } finally {
                 // Remove spinning animation
                 svg.style.animation = '';
@@ -736,7 +822,7 @@
                 await auth.signOut();
             } catch (error) {
                 console.error('Logout error:', error);
-                alert('Error logging out. Please try again.');
+                showToast('Error logging out. Please try again.', 'error');
             }
         });
 
@@ -756,16 +842,16 @@
             if (user && user.email) {
                 try {
                     await auth.sendPasswordResetEmail(user.email);
-                    alert('Password reset link sent to ' + user.email);
+                    showToast('Password reset link sent to ' + user.email, 'success');
                 } catch (error) {
                     console.error('Error sending password reset:', error);
-                    alert('Error sending password reset email. Please try again.');
+                    showToast('Error sending password reset email. Please try again.', 'error');
                 }
             }
         });
 
         document.getElementById('enableMFABtn').addEventListener('click', function() {
-            alert('Multi-factor authentication setup:\n\n1. Go to Firebase Console\n2. Navigate to Authentication → Settings\n3. Enable Phone authentication for MFA\n4. Users can enroll in Settings\n\nNote: This requires additional Firebase configuration.');
+            showToast('MFA setup requires Firebase Console configuration. Check documentation for details.', 'info');
         });
 
         // ========================================
@@ -1042,7 +1128,7 @@
                 });
 
                 if (suggestions.length === 0) {
-                    alert('No suggestions to export');
+                    showToast('No suggestions to export', 'warning');
                     return;
                 }
 
@@ -1077,7 +1163,7 @@
                 window.URL.revokeObjectURL(url);
             } catch (error) {
                 console.error('Export error:', error);
-                alert('Error exporting data. Please try again.');
+                showToast('Error exporting data. Please try again.', 'error');
             }
         });
 
@@ -1091,7 +1177,7 @@
                 });
 
                 if (messages.length === 0) {
-                    alert('No contact messages to export');
+                    showToast('No contact messages to export', 'warning');
                     return;
                 }
 
@@ -1128,7 +1214,7 @@
                 window.URL.revokeObjectURL(url);
             } catch (error) {
                 console.error('Export error:', error);
-                alert('Error exporting data. Please try again.');
+                showToast('Error exporting data. Please try again.', 'error');
             }
         });
 
@@ -1142,7 +1228,7 @@
                 });
 
                 if (emails.length === 0) {
-                    alert('No emails to export');
+                    showToast('No emails to export', 'warning');
                     return;
                 }
 
@@ -1175,7 +1261,7 @@
                 window.URL.revokeObjectURL(url);
             } catch (error) {
                 console.error('Export error:', error);
-                alert('Error exporting data. Please try again.');
+                showToast('Error exporting data. Please try again.', 'error');
             }
         });
 
@@ -1245,7 +1331,8 @@
                         'budgeting': 'bg-purple-100 text-purple-700',
                         'investing': 'bg-indigo-100 text-indigo-700',
                         'news': 'bg-red-100 text-red-700',
-                        'tutorials': 'bg-teal-100 text-teal-700'
+                        'tutorials': 'bg-teal-100 text-teal-700',
+                        'story': 'bg-pink-100 text-pink-700'
                     };
 
                     const categoryClass = categoryColors[blog.category] || 'bg-slate-100 text-slate-700';
@@ -1378,12 +1465,12 @@
                 if (currentEditingBlogId) {
                     // Update existing blog post
                     await db.collection('landing_blogs').doc(currentEditingBlogId).update(blogData);
-                    alert('Blog post updated successfully!');
+                    showToast('Blog post updated successfully!', 'success');
                 } else {
                     // Create new blog post
                     blogData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
                     await db.collection('landing_blogs').add(blogData);
-                    alert('Blog post created successfully!');
+                    showToast('Blog post created successfully!', 'success');
                 }
 
                 // Close modal and reload
@@ -1405,7 +1492,7 @@
                     errorMsg += error.message || 'Please try again.';
                 }
 
-                alert(errorMsg);
+                showToast(errorMsg, 'error');
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = originalText;
@@ -1418,7 +1505,7 @@
                 const doc = await db.collection('landing_blogs').doc(blogId).get();
 
                 if (!doc.exists) {
-                    alert('Blog post not found.');
+                    showToast('Blog post not found.', 'error');
                     return;
                 }
 
@@ -1443,7 +1530,7 @@
 
             } catch (error) {
                 console.error('Error loading blog post:', error);
-                alert('Error loading blog post. Please try again.');
+                showToast('Error loading blog post. Please try again.', 'error');
             }
         };
 
@@ -1456,11 +1543,11 @@
                 });
 
                 await loadBlogPosts();
-                alert(newPublishState ? 'Blog post published!' : 'Blog post unpublished.');
+                showToast(newPublishState ? 'Blog post published!' : 'Blog post unpublished.', 'success');
 
             } catch (error) {
                 console.error('Error updating publish status:', error);
-                alert('Error updating blog post. Please try again.');
+                showToast('Error updating blog post. Please try again.', 'error');
             }
         };
 
@@ -1473,11 +1560,11 @@
             try {
                 await db.collection('landing_blogs').doc(blogId).delete();
                 await loadBlogPosts();
-                alert('Blog post deleted successfully.');
+                showToast('Blog post deleted successfully.', 'success');
 
             } catch (error) {
                 console.error('Error deleting blog post:', error);
-                alert('Error deleting blog post. Please try again.');
+                showToast('Error deleting blog post. Please try again.', 'error');
             }
         };
 
