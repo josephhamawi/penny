@@ -12,7 +12,8 @@ import {
   Image,
   Clipboard,
   Share,
-  Platform
+  Platform,
+  Switch
 } from 'react-native';
 import { FontAwesome5 as Icon } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -42,6 +43,11 @@ import { formatCurrency } from '../utils/formatNumber';
 import { colors, shadows, typography } from '../theme/colors';
 import firebase, { auth } from '../config/firebase';
 import Constants from 'expo-constants';
+import {
+  areNotificationsEnabled,
+  setNotificationsEnabled,
+  checkNotificationPermissions
+} from '../services/notificationService';
 
 const SettingsScreen = ({ navigation }) => {
   const [webhookUrl, setWebhookUrl] = useState('');
@@ -61,12 +67,15 @@ const SettingsScreen = ({ navigation }) => {
   const [loadingCollabCode, setLoadingCollabCode] = useState(true);
   const [collabCodeError, setCollabCodeError] = useState(false);
   const [expandedCollabCode, setExpandedCollabCode] = useState(false);
+  const [notificationsEnabled, setNotificationsEnabledState] = useState(false);
+  const [checkingNotifications, setCheckingNotifications] = useState(true);
   const { user, logout, updateUserProfile } = useAuth();
 
   useEffect(() => {
     loadWebhookUrl();
     loadBudget();
     loadCollabCode();
+    loadNotificationSettings();
     if (user) {
       setDisplayName(user.displayName || '');
       setPhotoURL(user.photoURL || null);
@@ -145,6 +154,74 @@ const SettingsScreen = ({ navigation }) => {
         type: 'error',
         text1: 'Share failed',
         text2: 'Unable to share collab code',
+        position: 'bottom',
+      });
+    }
+  };
+
+  const loadNotificationSettings = async () => {
+    try {
+      setCheckingNotifications(true);
+      const enabled = await areNotificationsEnabled();
+      setNotificationsEnabledState(enabled);
+    } catch (error) {
+      console.error('Error loading notification settings:', error);
+    } finally {
+      setCheckingNotifications(false);
+    }
+  };
+
+  const handleToggleNotifications = async (value) => {
+    try {
+      const success = await setNotificationsEnabled(value);
+
+      if (success) {
+        setNotificationsEnabledState(value);
+
+        if (value) {
+          // Check if permissions were granted
+          const hasPermission = await checkNotificationPermissions();
+
+          if (hasPermission) {
+            Toast.show({
+              type: 'success',
+              text1: 'Notifications Enabled',
+              text2: 'You will receive notifications for important updates',
+              position: 'bottom',
+            });
+          } else {
+            // Revert state if permissions denied
+            setNotificationsEnabledState(false);
+            await setNotificationsEnabled(false);
+
+            Alert.alert(
+              'Permission Required',
+              'Please enable notifications in your device settings to receive alerts.',
+              [{ text: 'OK' }]
+            );
+          }
+        } else {
+          Toast.show({
+            type: 'info',
+            text1: 'Notifications Disabled',
+            text2: 'You will not receive notifications',
+            position: 'bottom',
+          });
+        }
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Failed to update notification settings',
+          position: 'bottom',
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling notifications:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to update notification settings',
         position: 'bottom',
       });
     }
@@ -432,6 +509,21 @@ const SettingsScreen = ({ navigation }) => {
       });
 
       console.log('[Sync] Import completed successfully');
+
+      // Prompt user to view imported data
+      setTimeout(() => {
+        Alert.alert(
+          'Import Successful',
+          `${importCount} expenses have been imported. Would you like to view them now?`,
+          [
+            { text: 'Stay Here', style: 'cancel' },
+            {
+              text: 'View Records',
+              onPress: () => navigation.navigate('Tabs', { screen: 'Records' })
+            }
+          ]
+        );
+      }, 500);
 
     } catch (error) {
       console.error('[Sync] Manual sync error:', error);
@@ -1133,6 +1225,27 @@ const SettingsScreen = ({ navigation }) => {
           </View>
           <Icon name="chevron-right" size={18} color={colors.text.tertiary} />
         </TouchableOpacity>
+
+        {/* Push Notifications */}
+        <View style={styles.menuItem}>
+          <View style={styles.menuItemLeft}>
+            <View style={[styles.menuIcon, { backgroundColor: colors.glass.background }]}>
+              <Icon name="bell" size={20} color={colors.primary} />
+            </View>
+            <Text style={styles.menuItemText}>Push Notifications</Text>
+          </View>
+          {checkingNotifications ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <Switch
+              value={notificationsEnabled}
+              onValueChange={handleToggleNotifications}
+              trackColor={{ false: colors.glass.borderLight, true: colors.primary }}
+              thumbColor={notificationsEnabled ? colors.text.primary : colors.text.disabled}
+              ios_backgroundColor={colors.glass.borderLight}
+            />
+          )}
+        </View>
 
         {/* Delete Account */}
         <TouchableOpacity
