@@ -137,6 +137,12 @@
             border-radius: 50px;
             padding: 8px 12px;
             border: 1px solid rgba(20, 212, 204, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .floating-header.scrolled .nav-pill-container {
+            background: rgba(51, 65, 85, 0.5);
+            border: 1px solid rgba(100, 116, 139, 0.3);
         }
 
         .nav-link {
@@ -158,6 +164,18 @@
             color: white;
         }
 
+        .floating-header.scrolled .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .floating-header.scrolled .nav-link:hover {
+            color: rgba(255, 255, 255, 0.95);
+        }
+
+        .floating-header.scrolled .nav-link.active {
+            color: white;
+        }
+
         /* Sliding indicator background */
         .nav-indicator {
             position: absolute;
@@ -166,6 +184,10 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             pointer-events: none;
             z-index: 1;
+        }
+
+        .floating-header.scrolled .nav-indicator {
+            background: rgba(20, 212, 204, 0.3);
         }
 
         /* User profile section */
