@@ -30,8 +30,8 @@
   "submit": {
     "production": {
       "ios": {
-        "ascAppId": "YOUR_APP_STORE_CONNECT_APP_ID_HERE",
-        "appleId": "your-apple-id@email.com"
+        "ascAppId": "6755596161",
+        "appleId": "joseph.hamawi@hotmail.com"
       }
     }
   }

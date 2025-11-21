@@ -4,6 +4,84 @@ const nodemailer = require('nodemailer');
 
 admin.initializeApp();
 
+// ============================================
+// RATE LIMITING UTILITY
+// ============================================
+
+/**
+ * Rate limiter using Firestore to track requests per IP
+ * @param {string} ip - Client IP address
+ * @param {string} action - Action type (e.g., 'waitlist', 'contact', 'suggestion')
+ * @param {number} maxRequests - Maximum requests allowed
+ * @param {number} windowMs - Time window in milliseconds
+ * @returns {Promise<boolean>} - true if allowed, false if rate limited
+ */
+async function checkRateLimit(ip, action, maxRequests = 5, windowMs = 60000) {
+  const db = admin.firestore();
+  const now = Date.now();
+  const windowStart = now - windowMs;
+
+  // Clean IP for use as document ID
+  const ipKey = ip.replace(/[^a-zA-Z0-9]/g, '_');
+  const rateLimitRef = db.collection('_rateLimits').doc(`${action}_${ipKey}`);
+
+  try {
+    const result = await db.runTransaction(async (transaction) => {
+      const doc = await transaction.get(rateLimitRef);
+
+      if (!doc.exists) {
+        // First request - create document
+        transaction.set(rateLimitRef, {
+          requests: [now],
+          lastCleanup: now,
+          expiresAt: admin.firestore.Timestamp.fromMillis(now + windowMs)
+        });
+        return true;
+      }
+
+      const data = doc.data();
+      let requests = data.requests || [];
+
+      // Remove expired requests
+      requests = requests.filter(timestamp => timestamp > windowStart);
+
+      // Check if limit exceeded
+      if (requests.length >= maxRequests) {
+        console.log(`Rate limit exceeded for ${ip} on ${action}: ${requests.length} requests`);
+        return false;
+      }
+
+      // Add current request
+      requests.push(now);
+
+      transaction.update(rateLimitRef, {
+        requests,
+        lastCleanup: now,
+        expiresAt: admin.firestore.Timestamp.fromMillis(now + windowMs)
+      });
+
+      return true;
+    });
+
+    return result;
+  } catch (error) {
+    console.error('Rate limit check error:', error);
+    // On error, allow the request (fail open)
+    return true;
+  }
+}
+
+/**
+ * Extract client IP from request
+ */
+function getClientIp(req) {
+  return req.headers['x-forwarded-for']?.split(',')[0].trim() ||
+         req.headers['x-real-ip'] ||
+         req.connection?.remoteAddress ||
+         req.socket?.remoteAddress ||
+         'unknown';
+}
+
 /**
  * Cloud Function to send email invitations
  * Triggers when a new invitation document is created with type='email'
@@ -261,6 +339,228 @@ exports.cleanupExpiredInvitations = functions.pubsub
       return null;
     } catch (error) {
       console.error('Error cleaning up expired invitations:', error);
+      return null;
+    }
+  });
+
+// ============================================
+// RATE-LIMITED LANDING PAGE ENDPOINTS
+// ============================================
+
+/**
+ * Submit to waitlist with rate limiting
+ * Rate limit: 3 submissions per hour per IP
+ */
+exports.submitWaitlist = functions.https.onRequest(async (req, res) => {
+  // Enable CORS
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  const clientIp = getClientIp(req);
+  const { email } = req.body;
+
+  // Validate email
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    res.status(400).json({ error: 'Invalid email address' });
+    return;
+  }
+
+  // Rate limiting: 3 requests per hour
+  const allowed = await checkRateLimit(clientIp, 'waitlist', 3, 3600000);
+  if (!allowed) {
+    res.status(429).json({
+      error: 'Too many requests. Please try again later.',
+      retryAfter: 3600 // seconds
+    });
+    return;
+  }
+
+  try {
+    const db = admin.firestore();
+    const emailId = email.toLowerCase().replace(/[^a-z0-9]/g, '_');
+
+    await db.collection('landing_waitlist').doc(emailId).set({
+      email: email.toLowerCase(),
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      ip: clientIp,
+      source: 'landing_page'
+    }, { merge: true });
+
+    console.log(`Waitlist submission from ${email} (${clientIp})`);
+    res.status(200).json({ success: true, message: 'Successfully added to waitlist' });
+  } catch (error) {
+    console.error('Error submitting to waitlist:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * Submit contact form with rate limiting
+ * Rate limit: 5 submissions per hour per IP
+ */
+exports.submitContact = functions.https.onRequest(async (req, res) => {
+  // Enable CORS
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  const clientIp = getClientIp(req);
+  const { name, email, message } = req.body;
+
+  // Validate inputs
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    res.status(400).json({ error: 'Invalid email address' });
+    return;
+  }
+  if (!name || name.length < 2 || name.length > 100) {
+    res.status(400).json({ error: 'Invalid name' });
+    return;
+  }
+  if (!message || message.length < 10 || message.length > 2000) {
+    res.status(400).json({ error: 'Message must be between 10 and 2000 characters' });
+    return;
+  }
+
+  // Rate limiting: 5 requests per hour
+  const allowed = await checkRateLimit(clientIp, 'contact', 5, 3600000);
+  if (!allowed) {
+    res.status(429).json({
+      error: 'Too many requests. Please try again later.',
+      retryAfter: 3600
+    });
+    return;
+  }
+
+  try {
+    const db = admin.firestore();
+
+    await db.collection('landing_contact_messages').add({
+      name,
+      email: email.toLowerCase(),
+      message,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      ip: clientIp,
+      read: false
+    });
+
+    console.log(`Contact form submission from ${email} (${clientIp})`);
+    res.status(200).json({ success: true, message: 'Message sent successfully' });
+  } catch (error) {
+    console.error('Error submitting contact form:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * Submit suggestion with rate limiting
+ * Rate limit: 10 submissions per hour per IP
+ */
+exports.submitSuggestion = functions.https.onRequest(async (req, res) => {
+  // Enable CORS
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  const clientIp = getClientIp(req);
+  const { suggestion } = req.body;
+
+  // Validate input
+  if (!suggestion || suggestion.length < 5 || suggestion.length > 500) {
+    res.status(400).json({ error: 'Suggestion must be between 5 and 500 characters' });
+    return;
+  }
+
+  // Rate limiting: 10 requests per hour
+  const allowed = await checkRateLimit(clientIp, 'suggestion', 10, 3600000);
+  if (!allowed) {
+    res.status(429).json({
+      error: 'Too many requests. Please try again later.',
+      retryAfter: 3600
+    });
+    return;
+  }
+
+  try {
+    const db = admin.firestore();
+
+    await db.collection('landing_suggestions').add({
+      suggestion,
+      timestamp: admin.firestore.FieldValue.serverTimestamp(),
+      ip: clientIp,
+      read: false,
+      votes: 0
+    });
+
+    console.log(`Suggestion submission from ${clientIp}`);
+    res.status(200).json({ success: true, message: 'Suggestion submitted successfully' });
+  } catch (error) {
+    console.error('Error submitting suggestion:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * Cleanup old rate limit documents
+ * Runs daily to remove expired rate limit entries
+ */
+exports.cleanupRateLimits = functions.pubsub
+  .schedule('0 2 * * *')
+  .timeZone('America/New_York')
+  .onRun(async (context) => {
+    const db = admin.firestore();
+    const now = admin.firestore.Timestamp.now();
+
+    try {
+      // Delete expired rate limit documents
+      const expiredDocs = await db
+        .collection('_rateLimits')
+        .where('expiresAt', '<=', now)
+        .get();
+
+      console.log(`Found ${expiredDocs.size} expired rate limit documents to clean up`);
+
+      const batch = db.batch();
+      expiredDocs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+
+      await batch.commit();
+
+      console.log('Rate limit cleanup completed');
+      return null;
+    } catch (error) {
+      console.error('Error cleaning up rate limits:', error);
       return null;
     }
   });

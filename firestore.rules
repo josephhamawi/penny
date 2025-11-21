@@ -143,6 +143,13 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Rate Limiting Collection (internal use by Cloud Functions)
+    match /_rateLimits/{docId} {
+      // Only Cloud Functions can read/write rate limit documents
+      // User-facing apps cannot access this collection
+      allow read, write: if false;
+    }
+
     // Deny all other paths by default
     match /{document=**} {
       allow read, write: if false;
