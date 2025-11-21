@@ -1113,9 +1113,9 @@ const SettingsScreen = ({ navigation }) => {
         >
           <View style={styles.menuItemLeft}>
             <View style={[styles.menuIcon, { backgroundColor: colors.glass.background }]}>
-              <Icon name="trash-alt" size={20} color="#FF6B6B" />
+              <Icon name="trash-alt" size={20} color={colors.expense} />
             </View>
-            <Text style={[styles.menuItemText, { color: '#FF6B6B' }]}>Clear All Data</Text>
+            <Text style={[styles.menuItemText, { color: colors.expense }]}>Clear All Data</Text>
           </View>
           <Icon name="chevron-right" size={18} color={colors.text.tertiary} />
         </TouchableOpacity>

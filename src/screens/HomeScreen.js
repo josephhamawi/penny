@@ -208,32 +208,6 @@ const HomeScreen = ({ navigation }) => {
         </View>
       </View>
 
-      {/* Plan Feature Card */}
-      <TouchableOpacity
-        style={styles.featureCard}
-        onPress={() => navigation.navigate('PlanOverview')}
-        activeOpacity={0.8}
-      >
-        <LinearGradient
-          colors={['#1E3A8A', '#3B82F6']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.featureCardGradient}
-        >
-          <View style={styles.featureCardContent}>
-            <View style={styles.featureIconContainer}>
-              <Icon name="piggy-bank" size={32} color="#FFFFFF" solid />
-            </View>
-            <View style={styles.featureTextContainer}>
-              <Text style={styles.featureTitle}>My Plans</Text>
-              <Text style={styles.featureSubtitle}>
-                Automatic savings from income
-              </Text>
-            </View>
-            <Icon name="chevron-right" size={20} color="rgba(255, 255, 255, 0.8)" />
-          </View>
-        </LinearGradient>
-      </TouchableOpacity>
 
       {/* Spending Plan Overview Widget */}
       {spendingPlan && topCategories.length > 0 && (
