@@ -234,9 +234,10 @@ const RootNavigator = () => {
       }
 
       try {
-        const REVENUECAT_IOS_API_KEY = process.env.REVENUECAT_IOS_API_KEY || 'test_kPJQuUnNcPqdAlnYATBQGahqFKX';
-        console.log('[App] Initializing RevenueCat...');
-        const success = await initializeRevenueCat(REVENUECAT_IOS_API_KEY);
+        // For now, skip RevenueCat initialization in production to prevent crashes
+        // TODO: Set up RevenueCat properly with correct API key
+        console.log('[App] Skipping RevenueCat initialization for this build');
+        const success = false; // await initializeRevenueCat(REVENUECAT_IOS_API_KEY);
         if (success) {
           console.log('[App] RevenueCat initialized successfully');
         } else {
