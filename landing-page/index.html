@@ -168,21 +168,6 @@
             z-index: 1;
         }
 
-        .nav-indicator-blog {
-            position: absolute;
-            background: rgba(51, 65, 85, 0.5);
-            border-radius: 50px;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            pointer-events: none;
-            z-index: 1;
-            opacity: 0;
-            inset: 0;
-        }
-
-        .nav-link-blog:hover .nav-indicator-blog {
-            opacity: 1;
-        }
-
         /* User profile section */
         .user-profile {
             background: rgba(20, 212, 204, 0.15);
@@ -379,7 +364,7 @@
     <!-- Floating Header -->
     <header class="floating-header fixed top-0 left-0 right-0 z-50">
         <nav class="max-w-7xl mx-auto px-6 py-3">
-            <div class="flex items-center justify-center gap-8">
+            <div class="flex items-center justify-center">
                 <!-- Center Navigation Pill -->
                 <div class="hidden md:flex nav-pill-container" style="position: relative;">
                     <div class="nav-indicator"></div>
@@ -387,13 +372,8 @@
                     <a href="#about" class="nav-link" data-nav="about">About Us</a>
                     <a href="#pricing" class="nav-link" data-nav="pricing">Pricing</a>
                     <a href="contact.html" class="nav-link" data-nav="contact">Contact</a>
+                    <a href="#blog" class="nav-link" data-nav="blog">Blog</a>
                 </div>
-
-                <!-- Blog Button -->
-                <a href="#blog" class="hidden md:flex user-profile cursor-pointer nav-link-blog" data-nav="blog" style="position: relative;">
-                    <div class="nav-indicator-blog"></div>
-                    <span class="user-name" style="position: relative; z-index: 2;">Blog</span>
-                </a>
             </div>
         </nav>
     </header>
