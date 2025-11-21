@@ -1,0 +1,10 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Blog images - authenticated admin can upload
+    match /blog-images/{imageId} {
+      allow read: if true; // Anyone can read blog images
+      allow write: if request.auth != null; // Only authenticated users can upload
+    }
+  }
+}
