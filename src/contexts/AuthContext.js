@@ -16,12 +16,23 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     checkBiometricAvailability();
+
+    // Timeout fallback in case Firebase auth never initializes
+    const timeout = setTimeout(() => {
+      console.log('[AuthContext] Auth initialization timeout - stopping loading state');
+      setLoading(false);
+    }, 5000); // 5 second timeout
+
     const unsubscribe = auth.onAuthStateChanged((user) => {
+      clearTimeout(timeout); // Cancel timeout if auth state changes
       setUser(user);
       setLoading(false);
     });
 
-    return unsubscribe;
+    return () => {
+      clearTimeout(timeout);
+      unsubscribe();
+    };
   }, []);
 
   const checkBiometricAvailability = async () => {
