@@ -1356,6 +1356,12 @@
             submitBtn.textContent = 'Saving...';
 
             try {
+                // Check if user is authenticated
+                const currentUser = auth.currentUser;
+                if (!currentUser) {
+                    throw new Error('You must be logged in to create or edit blog posts.');
+                }
+                console.log('Authenticated user:', currentUser.email);
                 const blogData = {
                     title: document.getElementById('blogTitle').value.trim(),
                     slug: document.getElementById('blogSlug').value.trim(),
@@ -1387,7 +1393,19 @@
 
             } catch (error) {
                 console.error('Error saving blog post:', error);
-                alert('Error saving blog post. Please try again.');
+                console.error('Error code:', error.code);
+                console.error('Error message:', error.message);
+
+                let errorMsg = 'Error saving blog post. ';
+                if (error.code === 'permission-denied') {
+                    errorMsg += 'Permission denied. Please ensure you are logged in as an admin.';
+                } else if (error.code === 'unauthenticated') {
+                    errorMsg += 'You are not authenticated. Please log in again.';
+                } else {
+                    errorMsg += error.message || 'Please try again.';
+                }
+
+                alert(errorMsg);
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.textContent = originalText;
