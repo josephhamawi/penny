@@ -301,34 +301,21 @@ const SettingsScreen = ({ navigation }) => {
 
     setSaving(true);
     try {
-      // Save the URL first
+      // Only save the URL - import is done separately via "Import from Google Sheets" button
       await saveWebhookUrl(webhookUrl.trim());
 
-      // Immediately import data from the sheet
-      Toast.show({
-        type: 'info',
-        text1: 'Importing...',
-        text2: 'Fetching data from Google Sheets',
-        position: 'bottom',
-        autoHide: false,
-      });
-
-      const count = await importFromGoogleSheets(webhookUrl.trim(), user.uid);
-
       setEditingWebhook(false);
-      Toast.hide();
       Toast.show({
         type: 'success',
-        text1: 'Import Successful',
-        text2: `Imported ${count} expense${count !== 1 ? 's' : ''} from Google Sheets`,
+        text1: 'URL Saved',
+        text2: 'Use "Import from Google Sheets" button below to import data',
         position: 'bottom',
       });
     } catch (error) {
-      console.error('Google Sheets sync error:', error);
-      Toast.hide();
+      console.error('Error saving Google Sheets URL:', error);
       Toast.show({
         type: 'error',
-        text1: 'Sync Error',
+        text1: 'Save Error',
         text2: error.message || 'Failed to import from Google Sheets. Check the URL and permissions.',
         position: 'bottom',
         visibilityTime: 4000,
@@ -1019,7 +1006,7 @@ const SettingsScreen = ({ navigation }) => {
                 {saving ? (
                   <ActivityIndicator color={colors.text.primary} size="small" />
                 ) : (
-                  <Text style={styles.buttonText}>Save & Import</Text>
+                  <Text style={styles.buttonText}>Save</Text>
                 )}
               </TouchableOpacity>
               {webhookUrl && (

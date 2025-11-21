@@ -1,4 +1,7 @@
 import { addExpense } from './expenseService';
+import { db, auth } from '../config/firebase';
+import firebase from 'firebase/compat/app';
+import { getUserDatabaseId } from './invitationService';
 
 /**
  * Parse Google Sheets URL to get the spreadsheet ID and GID
@@ -282,18 +285,27 @@ export const importFromGoogleSheets = async (url, userId, onProgress = null, sig
       throw new Error('No data found in the sheet');
     }
 
-    // Import each row as an expense (skip auto-sync for performance)
+    // PERFORMANCE: Use Firestore batch writes instead of sequential writes
+    // Process in batches of 500 (Firestore batch limit)
+    const BATCH_SIZE = 500;
     let importedCount = 0;
     let skippedCount = 0;
-    console.log(`[Import] Starting batch import of ${rows.length} rows...`);
+    console.log(`[Import] Starting batch import of ${rows.length} rows using Firestore batching...`);
 
     // Report initial progress
     if (onProgress) {
       onProgress(0, rows.length);
     }
 
-    for (let i = 0; i < rows.length; i++) {
-      // Check if import was cancelled
+    // Get user and database ID once
+    const user = auth.currentUser;
+    if (!user) throw new Error('User not authenticated');
+    const databaseId = await getUserDatabaseId(user.uid);
+    const expensesCollection = db.collection(`users/${databaseId}/expenses`);
+
+    // Process rows in batches
+    for (let batchStart = 0; batchStart < rows.length; batchStart += BATCH_SIZE) {
+      // Check if import was cancelled before starting new batch
       if (signal && signal.aborted) {
         console.log('[Import] Import cancelled by user');
         const error = new Error('Import cancelled');
@@ -301,39 +313,58 @@ export const importFromGoogleSheets = async (url, userId, onProgress = null, sig
         throw error;
       }
 
-      const row = rows[i];
-      try {
-        const expenseData = rowToExpense(row);
+      const batchEnd = Math.min(batchStart + BATCH_SIZE, rows.length);
+      const batchRows = rows.slice(batchStart, batchEnd);
 
-        // Validate that we have valid data
-        if (expenseData.inAmount > 0 || expenseData.outAmount > 0) {
-          // Skip sync during bulk import for performance
-          await addExpense(expenseData, { skipSync: true });
-          importedCount++;
+      // Create Firestore batch
+      const batch = db.batch();
+      let batchCount = 0;
 
-          // Report progress
-          if (onProgress) {
-            onProgress(importedCount, rows.length);
+      for (const row of batchRows) {
+        try {
+          const expenseData = rowToExpense(row);
+
+          // Validate that we have valid data
+          if (expenseData.inAmount > 0 || expenseData.outAmount > 0) {
+            // Add to batch instead of individual write
+            const docRef = expensesCollection.doc();
+            const dateObj = new Date(expenseData.date);
+
+            batch.set(docRef, {
+              userId: user.uid,
+              date: firebase.firestore.Timestamp.fromDate(dateObj),
+              description: expenseData.description,
+              category: expenseData.category,
+              inAmount: parseFloat(expenseData.inAmount) || 0,
+              outAmount: parseFloat(expenseData.outAmount) || 0,
+              createdAt: firebase.firestore.Timestamp.now()
+            });
+
+            batchCount++;
+          } else {
+            skippedCount++;
           }
-
-          // Log progress every 50 rows
-          if (importedCount % 50 === 0) {
-            console.log(`[Import] Progress: ${importedCount}/${rows.length} expenses imported`);
-          }
-        } else {
+        } catch (error) {
+          console.error('Error preparing row:', error.message);
           skippedCount++;
-          console.log('Skipped row with no amounts:', row);
         }
-      } catch (error) {
-        console.error('Error importing row:', error.message);
-        console.error('Row data:', JSON.stringify(row));
-        skippedCount++;
-        // Continue with next row
+      }
+
+      // Commit the batch
+      if (batchCount > 0) {
+        await batch.commit();
+        importedCount += batchCount;
+        console.log(`[Import] Batch ${Math.floor(batchStart / BATCH_SIZE) + 1}: Committed ${batchCount} expenses (${importedCount}/${rows.length} total)`);
+      }
+
+      // Report progress
+      if (onProgress) {
+        onProgress(importedCount, rows.length);
       }
     }
 
     console.log(`[Import] Batch import complete: ${importedCount} imported, ${skippedCount} skipped`);
-    console.log(`[Import] Final sync to Google Sheets skipped (no webhook configured yet)`);
+    console.log(`[Import] Performance: Used Firestore batching (${Math.ceil(rows.length / BATCH_SIZE)} batch operations)`);
 
     return importedCount;
   } catch (error) {
