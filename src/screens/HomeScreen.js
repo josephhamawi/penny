@@ -208,6 +208,32 @@ const HomeScreen = ({ navigation }) => {
         </View>
       </View>
 
+      {/* My Plans Feature Card */}
+      <TouchableOpacity
+        style={styles.featureCard}
+        onPress={() => navigation.navigate('GoalsDashboard')}
+        activeOpacity={0.8}
+      >
+        <LinearGradient
+          colors={['#1E3A8A', '#3B82F6']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.featureCardGradient}
+        >
+          <View style={styles.featureCardContent}>
+            <View style={styles.featureIconContainer}>
+              <Icon name="piggy-bank" size={32} color="#FFFFFF" solid />
+            </View>
+            <View style={styles.featureTextContainer}>
+              <Text style={styles.featureTitle}>My Plans</Text>
+              <Text style={styles.featureSubtitle}>
+                Track your savings goals
+              </Text>
+            </View>
+            <Icon name="chevron-right" size={20} color="rgba(255, 255, 255, 0.8)" />
+          </View>
+        </LinearGradient>
+      </TouchableOpacity>
 
       {/* Spending Plan Overview Widget */}
       {spendingPlan && topCategories.length > 0 && (
@@ -645,6 +671,43 @@ const styles = StyleSheet.create({
   emptyRecordsText: {
     color: colors.text.tertiary,
     fontSize: 14,
+  },
+  // My Plans Feature Card Styles
+  featureCard: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+    borderRadius: 20,
+    overflow: 'hidden',
+    ...shadows.md,
+  },
+  featureCardGradient: {
+    padding: 20,
+  },
+  featureCardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  featureIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  featureTextContainer: {
+    flex: 1,
+  },
+  featureTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  featureSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
   },
   // Spending Plan Widget Styles
   spendingPlanWidget: {
