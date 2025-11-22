@@ -55,64 +55,107 @@ export const addExpense = async (expenseData, options = {}) => {
 // userId parameter is resolved to shared database ID if user is in a shared database
 export const subscribeToExpenses = (userId, callback) => {
   console.log('[ExpenseService] subscribeToExpenses called with userId:', userId);
-  if (!userId) throw new Error('User ID is required');
+  if (!userId) {
+    console.error('[ExpenseService] User ID is required');
+    callback([]);
+    return () => {};
+  }
+
+  // Track unsubscribe function
+  let unsubscribe = null;
+  let hasCalledCallback = false;
+
+  // Set up a timeout to prevent infinite loading
+  const timeoutId = setTimeout(() => {
+    if (!hasCalledCallback) {
+      console.warn('[ExpenseService] Subscription timeout - calling callback with empty array');
+      hasCalledCallback = true;
+      callback([]);
+    }
+  }, 10000); // 10 second timeout
 
   // Resolve to database ID (shared or personal)
-  let unsubscribe = null;
+  getUserDatabaseId(userId)
+    .then((databaseId) => {
+      console.log('[ExpenseService] Database ID resolved to:', databaseId);
 
-  getUserDatabaseId(userId).then((databaseId) => {
-    console.log('[ExpenseService] Database ID resolved to:', databaseId);
-    unsubscribe = getUserExpensesCollection(databaseId)
-      .orderBy('date', 'asc')
-      .orderBy('createdAt', 'asc')
-      .onSnapshot((querySnapshot) => {
-        const expenses = [];
-        let balance = 0;
+      unsubscribe = getUserExpensesCollection(databaseId)
+        .orderBy('date', 'asc')
+        .orderBy('createdAt', 'asc')
+        .onSnapshot(
+          (querySnapshot) => {
+            // Clear timeout on successful response
+            clearTimeout(timeoutId);
+            hasCalledCallback = true;
 
-        // Process expenses
-        const tempExpenses = [];
-        querySnapshot.forEach((doc) => {
-          tempExpenses.push({
-            id: doc.id,
-            ...doc.data(),
-            date: doc.data().date.toDate()
-          });
-        });
+            const expenses = [];
+            let balance = 0;
 
-        // Sort by date (oldest first) for balance calculation and ref# assignment
-        // This ensures ref# 1 is the earliest expense, increasing chronologically
-        // If dates are equal, sort by createdAt timestamp
-        tempExpenses.sort((a, b) => {
-          const dateCompare = a.date - b.date;
-          if (dateCompare !== 0) return dateCompare;
-          // If dates are the same, sort by creation time
-          return a.createdAt.seconds - b.createdAt.seconds;
-        });
+            // Process expenses
+            const tempExpenses = [];
+            querySnapshot.forEach((doc) => {
+              tempExpenses.push({
+                id: doc.id,
+                ...doc.data(),
+                date: doc.data().date.toDate()
+              });
+            });
 
-        // Calculate balance and assign ref numbers
-        tempExpenses.forEach((expense, index) => {
-          expense.ref = index + 1; // Sequential ref# starting from 1 (earliest expense = ref# 1)
-          balance += expense.inAmount - expense.outAmount;
-          expense.balance = balance;
-          expenses.push(expense);
-        });
+            // Sort by date (oldest first) for balance calculation and ref# assignment
+            // This ensures ref# 1 is the earliest expense, increasing chronologically
+            // If dates are equal, sort by createdAt timestamp
+            tempExpenses.sort((a, b) => {
+              const dateCompare = a.date - b.date;
+              if (dateCompare !== 0) return dateCompare;
+              // If dates are the same, sort by creation time
+              return a.createdAt.seconds - b.createdAt.seconds;
+            });
 
-        // Reverse to show newest first in the list
-        expenses.reverse();
+            // Calculate balance and assign ref numbers
+            tempExpenses.forEach((expense, index) => {
+              expense.ref = index + 1; // Sequential ref# starting from 1 (earliest expense = ref# 1)
+              balance += expense.inAmount - expense.outAmount;
+              expense.balance = balance;
+              expenses.push(expense);
+            });
 
-        console.log(`[ExpenseService] Loaded ${expenses.length} expenses from Firebase`);
-        callback(expenses);
-      }, (error) => {
-        console.error('Error subscribing to expenses:', error);
-      });
-  }).catch((error) => {
-    console.error('Error resolving database ID:', error);
-    callback([]);
-  });
+            // Reverse to show newest first in the list
+            expenses.reverse();
 
-  // Return unsubscribe function
+            console.log(`[ExpenseService] Loaded ${expenses.length} expenses from Firebase`);
+            callback(expenses);
+          },
+          (error) => {
+            // Clear timeout on error
+            clearTimeout(timeoutId);
+            console.error('[ExpenseService] Error subscribing to expenses:', error);
+
+            // CRITICAL: Always call callback even on error to stop loading spinner
+            if (!hasCalledCallback) {
+              hasCalledCallback = true;
+              callback([]);
+            }
+          }
+        );
+    })
+    .catch((error) => {
+      // Clear timeout on error
+      clearTimeout(timeoutId);
+      console.error('[ExpenseService] Error resolving database ID:', error);
+
+      // CRITICAL: Always call callback even on error to stop loading spinner
+      if (!hasCalledCallback) {
+        hasCalledCallback = true;
+        callback([]);
+      }
+    });
+
+  // Return unsubscribe function that also clears timeout
   return () => {
-    if (unsubscribe) unsubscribe();
+    clearTimeout(timeoutId);
+    if (unsubscribe) {
+      unsubscribe();
+    }
   };
 };
 
