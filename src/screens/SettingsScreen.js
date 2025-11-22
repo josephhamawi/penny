@@ -861,74 +861,101 @@ const SettingsScreen = ({ navigation }) => {
         )}
       </LinearGradient>
 
-      {/* Profile Section */}
-      <View style={styles.profileSection}>
-        <TouchableOpacity
-          onPress={editingName ? handlePickImage : null}
-          style={styles.avatarContainer}
-          disabled={!editingName}
-        >
-          {photoURL ? (
-            <Image source={{ uri: photoURL }} style={styles.avatarImage} />
-          ) : (
-            <View style={styles.avatar}>
-              <Icon name="user" size={40} color={colors.primary} />
-            </View>
-          )}
-          {editingName && (
-            <View style={styles.cameraIcon}>
-              <Icon name="camera" size={14} color={colors.text.primary} />
-            </View>
-          )}
-        </TouchableOpacity>
+      {/* Profile Card */}
+      <View style={styles.profileCard}>
+        <View style={styles.profileHeader}>
+          <TouchableOpacity
+            onPress={editingName ? handlePickImage : null}
+            style={styles.avatarContainer}
+            disabled={!editingName}
+          >
+            {photoURL ? (
+              <Image source={{ uri: photoURL }} style={styles.avatarImage} />
+            ) : (
+              <LinearGradient
+                colors={[colors.primary, colors.secondary]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.avatarGradient}
+              >
+                <Icon name="user" size={32} color="#FFFFFF" />
+              </LinearGradient>
+            )}
+            {editingName && (
+              <View style={styles.cameraIconBadge}>
+                <Icon name="camera" size={12} color={colors.text.primary} />
+              </View>
+            )}
+          </TouchableOpacity>
 
-        {editingName ? (
-          <View style={styles.editForm}>
-            <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>Display name</Text>
-              <TextInput
-                style={styles.formInput}
-                value={displayName}
-                onChangeText={setDisplayName}
-                placeholder="Jackson Reed"
-                editable={!updatingProfile}
-              />
-            </View>
-            <View style={styles.formGroup}>
-              <Text style={styles.formLabel}>E-mail</Text>
-              <TextInput
-                style={[styles.formInput, styles.formInputDisabled]}
-                value={user?.email}
-                editable={false}
-              />
-            </View>
-            <View style={styles.formActions}>
-              <TouchableOpacity
-                style={styles.formCancelButton}
-                onPress={handleCancelEdit}
-                disabled={updatingProfile}
-              >
-                <Text style={styles.cancelButtonText}>cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.saveButton, updatingProfile && styles.buttonDisabled]}
-                onPress={handleSaveProfile}
-                disabled={updatingProfile}
-              >
-                {updatingProfile ? (
-                  <ActivityIndicator color={colors.text.primary} size="small" />
-                ) : (
-                  <Text style={styles.saveButtonText}>Save</Text>
-                )}
-              </TouchableOpacity>
-            </View>
+          <View style={styles.profileInfo}>
+            {editingName ? (
+              <View style={styles.editNameContainer}>
+                <TextInput
+                  style={styles.nameInput}
+                  value={displayName}
+                  onChangeText={setDisplayName}
+                  placeholder="Your name"
+                  placeholderTextColor={colors.text.disabled}
+                  editable={!updatingProfile}
+                  autoFocus
+                />
+                <View style={styles.editActions}>
+                  <TouchableOpacity
+                    onPress={handleCancelEdit}
+                    disabled={updatingProfile}
+                    style={styles.iconButton}
+                  >
+                    <Icon name="times" size={16} color={colors.text.tertiary} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={handleSaveProfile}
+                    disabled={updatingProfile}
+                    style={[styles.iconButton, styles.iconButtonPrimary]}
+                  >
+                    {updatingProfile ? (
+                      <ActivityIndicator color="#FFFFFF" size="small" />
+                    ) : (
+                      <Icon name="check" size={16} color="#FFFFFF" />
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <>
+                <View style={styles.nameRow}>
+                  <Text style={styles.profileName}>{user?.displayName || 'User'}</Text>
+                  <TouchableOpacity
+                    onPress={() => setEditingName(true)}
+                    style={styles.editIconButton}
+                  >
+                    <Icon name="pen" size={14} color={colors.primary} />
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.profileEmail}>{user?.email}</Text>
+              </>
+            )}
           </View>
-        ) : (
-          <>
-            <Text style={styles.profileName}>{user?.displayName || 'User'}</Text>
-            <Text style={styles.profileEmail}>{user?.email}</Text>
-          </>
-        )}
+        </View>
+
+        {/* Profile Stats */}
+        <View style={styles.profileStats}>
+          <View style={styles.statItem}>
+            <Icon name="calendar-alt" size={16} color={colors.primary} />
+            <Text style={styles.statLabel}>Member since</Text>
+            <Text style={styles.statValue}>
+              {user?.metadata?.creationTime
+                ? new Date(user.metadata.creationTime).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+                : 'Recently'}
+            </Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Icon name="shield-alt" size={16} color={colors.success} />
+            <Text style={styles.statLabel}>Account status</Text>
+            <Text style={[styles.statValue, { color: colors.success }]}>Active</Text>
+          </View>
+        </View>
       </View>
 
       {/* My Collab Code Section */}
@@ -1353,54 +1380,136 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  profileSection: {
+  profileCard: {
     backgroundColor: colors.glass.background,
-    paddingTop: 30,
-    paddingBottom: 20,
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.glass.borderLight,
+    marginHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 20,
+    borderRadius: 20,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: colors.glass.borderLight,
     ...shadows.md,
+  },
+  profileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    gap: 16,
   },
   avatarContainer: {
     position: 'relative',
-    marginBottom: 15,
   },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: colors.glass.background,
+  avatarGradient: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: colors.glass.border,
   },
   avatarImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
   },
-  cameraIcon: {
+  cameraIconBadge: {
     position: 'absolute',
-    bottom: 2,
-    right: 2,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    bottom: 0,
+    right: 0,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 3,
+    borderWidth: 2,
     borderColor: colors.glass.background,
-    ...shadows.sm,
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
   },
   profileName: {
-    ...typography.h2,
-    marginBottom: 5,
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text.primary,
+  },
+  editIconButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.glass.backgroundMedium,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   profileEmail: {
-    ...typography.caption,
+    fontSize: 14,
+    color: colors.text.tertiary,
+  },
+  editNameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  nameInput: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text.primary,
+    backgroundColor: colors.backgroundLight,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  editActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  iconButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.glass.backgroundMedium,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconButtonPrimary: {
+    backgroundColor: colors.primary,
+  },
+  profileStats: {
+    flexDirection: 'row',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.glass.borderLight,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: colors.text.tertiary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginTop: 4,
+  },
+  statValue: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: colors.glass.borderLight,
+    marginHorizontal: 16,
   },
   editForm: {
     width: '100%',
