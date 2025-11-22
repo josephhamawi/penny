@@ -569,6 +569,36 @@ const SettingsScreen = ({ navigation }) => {
     );
   };
 
+  const handleOpenPrivacyPolicy = async () => {
+    const url = 'https://pennybudget.app/privacy-policy.html';
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Error', 'Cannot open Privacy Policy link');
+      }
+    } catch (error) {
+      console.error('Error opening Privacy Policy:', error);
+      Alert.alert('Error', 'Failed to open Privacy Policy');
+    }
+  };
+
+  const handleOpenTermsAndConditions = async () => {
+    const url = 'https://pennybudget.app/terms-and-conditions.html';
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('Error', 'Cannot open Terms & Conditions link');
+      }
+    } catch (error) {
+      console.error('Error opening Terms & Conditions:', error);
+      Alert.alert('Error', 'Failed to open Terms & Conditions');
+    }
+  };
+
   const handleLogout = async () => {
     Alert.alert(
       'Logout',
@@ -1273,6 +1303,34 @@ const SettingsScreen = ({ navigation }) => {
             />
           )}
         </View>
+
+        {/* Privacy Policy */}
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={handleOpenPrivacyPolicy}
+        >
+          <View style={styles.menuItemLeft}>
+            <View style={[styles.menuIcon, { backgroundColor: colors.glass.background }]}>
+              <Icon name="shield-alt" size={20} color={colors.primary} />
+            </View>
+            <Text style={styles.menuItemText}>Privacy Policy</Text>
+          </View>
+          <Icon name="external-link-alt" size={16} color={colors.text.tertiary} />
+        </TouchableOpacity>
+
+        {/* Terms & Conditions */}
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={handleOpenTermsAndConditions}
+        >
+          <View style={styles.menuItemLeft}>
+            <View style={[styles.menuIcon, { backgroundColor: colors.glass.background }]}>
+              <Icon name="file-contract" size={20} color={colors.primary} />
+            </View>
+            <Text style={styles.menuItemText}>Terms & Conditions</Text>
+          </View>
+          <Icon name="external-link-alt" size={16} color={colors.text.tertiary} />
+        </TouchableOpacity>
 
         {/* Delete Account */}
         <TouchableOpacity
