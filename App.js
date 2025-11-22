@@ -53,8 +53,6 @@ const TabNavigator = () => (
           iconName = 'receipt';
         } else if (route.name === 'Statistics') {
           iconName = 'chart-pie';
-        } else if (route.name === 'SpendingPlan') {
-          iconName = 'wallet';
         } else if (route.name === 'Settings') {
           iconName = 'cog';
         }
@@ -112,11 +110,6 @@ const TabNavigator = () => (
     <Tab.Screen name="Home" component={HomeScreen} />
     <Tab.Screen name="Records" component={RecordsScreen} />
     <Tab.Screen name="Statistics" component={StatisticsScreen} />
-    <Tab.Screen
-      name="SpendingPlan"
-      component={SpendingPlanScreen}
-      options={{ tabBarLabel: 'My Plan' }}
-    />
     <Tab.Screen name="Settings" component={SettingsScreen} />
   </Tab.Navigator>
 );
